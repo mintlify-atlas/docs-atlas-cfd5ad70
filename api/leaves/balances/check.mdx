@@ -1,0 +1,159 @@
+---
+title: 'Check Leave Balance'
+api: 'GET /leave-balance'
+description: "Check current user's available leave balance"
+---
+
+Check the available leave balance for the authenticated employee for a specific leave type and year. This endpoint returns the number of available days that can be requested.
+
+## Authentication
+
+Requires authentication with Bearer token. Available to:
+- **Employee**
+- **Manager**
+
+<Note>
+  This endpoint automatically uses the employee ID from the JWT token, so employees can only check their own balance.
+</Note>
+
+## Query Parameters
+
+<ParamField query="leaveTypeId" type="string" required>
+  UUID of the leave type to check balance for
+  
+  **Example:** `"a1b2c3d4-e5f6-7890-abcd-ef1234567890"`
+</ParamField>
+
+<ParamField query="year" type="integer" required>
+  The year to check balance for (between 2020 and 2100)
+  
+  **Example:** `2025`
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="number">
+  Available leave days remaining (can include decimal values for half days)
+  
+  **Example:** `15.5`
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.companyflow.com/leave-balance?leaveTypeId=a1b2c3d4-e5f6-7890-abcd-ef1234567890&year=2025" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```javascript JavaScript
+const leaveTypeId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+const year = 2025;
+
+const response = await fetch(
+  `https://api.companyflow.com/leave-balance?leaveTypeId=${leaveTypeId}&year=${year}`,
+  {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN'
+    }
+  }
+);
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+url = 'https://api.companyflow.com/leave-balance'
+headers = {
+    'Authorization': 'Bearer YOUR_TOKEN'
+}
+params = {
+    'leaveTypeId': 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'year': 2025
+}
+
+response = requests.get(url, headers=headers, params=params)
+data = response.json()
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "success": true,
+  "data": 15.5
+}
+```
+
+```json 400 - Bad Request (Missing leaveTypeId)
+{
+  "success": false,
+  "message": "leaveTypeId is required"
+}
+```
+
+```json 400 - Bad Request (Missing year)
+{
+  "success": false,
+  "message": "year is required"
+}
+```
+
+```json 400 - Bad Request (Invalid year)
+{
+  "success": false,
+  "message": "invalid year"
+}
+```
+
+```json 401 - Unauthorized
+{
+  "success": false,
+  "message": "unauthorized"
+}
+```
+
+```json 500 - Internal Server Error
+{
+  "success": false,
+  "message": "internal server error"
+}
+```
+</ResponseExample>
+
+## Understanding the Balance
+
+The returned balance represents:
+
+- **Total allocated days** for the year
+- **Minus** days already taken (approved leave)
+- **Minus** days pending approval
+- **Plus** any carried forward days from the previous year
+
+<Info>
+  Half-day leave is supported, so the balance can include decimal values like `15.5` (15 and a half days remaining).
+</Info>
+
+## Use Cases
+
+This endpoint is typically used:
+
+- Before submitting a leave request to verify sufficient balance
+- In employee self-service portals to display available leave
+- In mobile apps for quick balance checks
+- When planning future leave requests
+
+<Tip>
+  For a more detailed breakdown including total days, used days, and pending days, use the [Get Balance by Type](/api/leaves/balances/by-type) endpoint instead.
+</Tip>
+
+## Related Endpoints
+
+- [Get Balance by Type](/api/leaves/balances/by-type) - Get detailed balance breakdown
+- [Get Employee Balances](/api/leaves/balances/employee) - Get all leave balances for an employee
+- [Request Leave](/api/leaves/create) - Submit a new leave request

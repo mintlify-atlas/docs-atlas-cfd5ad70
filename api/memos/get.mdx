@@ -142,13 +142,13 @@ GET /memos/123e4567-e89b-12d3-a456-426614174000
 After retrieving a memo, you can:
 
 <CardGroup cols={2}>
-  <Card title="Mark as Read" icon="check" href="/api/memos/update">
+  <Card title="Mark as Read" icon="check" href="/api/memos/read">
     Mark the memo as read if you're a recipient
   </Card>
-  <Card title="Approve Memo" icon="thumbs-up" href="/api/memos/update">
+  <Card title="Approve Memo" icon="thumbs-up" href="/api/memos/approve">
     Approve the memo if you're an authorized approver
   </Card>
-  <Card title="Reject Memo" icon="thumbs-down" href="/api/memos/update">
+  <Card title="Reject Memo" icon="thumbs-down" href="/api/memos/reject">
     Reject the memo if you're an authorized approver
   </Card>
 </CardGroup>

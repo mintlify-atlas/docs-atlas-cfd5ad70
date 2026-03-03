@@ -1,0 +1,195 @@
+---
+title: 'Add Permission'
+api: 'PUT /roles/{role_id}/permissions/{permission_id}'
+description: 'Add a single permission to a role'
+---
+
+Add a single permission to an existing role without removing other permissions. This is useful for incrementally granting new permissions to a role. Requires Super Admin or HR Manager permissions.
+
+## Path Parameters
+
+<ParamField path="role_id" type="string" required>
+  The unique identifier of the role (UUID format)
+  
+  **Example:** `"550e8400-e29b-41d4-a716-446655440000"`
+</ParamField>
+
+<ParamField path="permission_id" type="string" required>
+  The unique identifier for the permission (can be any UUID, but typically not used in request body)
+  
+  **Example:** `"660e8400-e29b-41d4-a716-446655440001"`
+</ParamField>
+
+## Request Body
+
+<ParamField body="action" type="string" required>
+  The action that can be performed (e.g., "read", "write", "delete", "update")
+  
+  **Example:** `"write"`
+</ParamField>
+
+<ParamField body="resource" type="string" required>
+  The resource the permission applies to (e.g., "employees", "departments", "memos")
+  
+  **Example:** `"departments"`
+</ParamField>
+
+<ParamField body="conditions" type="object">
+  Optional conditions that must be met for the permission to apply
+  
+  **Example:** `{"department_id": "123e4567-e89b-12d3-a456-426614174000"}`
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The updated role object with the new permission
+  
+  <Expandable title="Role Object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the role
+    </ResponseField>
+    
+    <ResponseField name="company_id" type="string">
+      The company this role belongs to
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Name of the role
+    </ResponseField>
+    
+    <ResponseField name="description" type="string">
+      Description of the role
+    </ResponseField>
+    
+    <ResponseField name="is_system_role" type="boolean">
+      Whether this is a system-defined role
+    </ResponseField>
+    
+    <ResponseField name="permissions_cache" type="string[]">
+      Array of cached permission strings
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the role was created
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of when the role was last updated
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT https://api.companyflow.com/roles/550e8400-e29b-41d4-a716-446655440000/permissions/660e8400-e29b-41d4-a716-446655440001 \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "write",
+    "resource": "departments",
+    "conditions": {
+      "department_id": "123e4567-e89b-12d3-a456-426614174000"
+    }
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.companyflow.com/roles/550e8400-e29b-41d4-a716-446655440000/permissions/660e8400-e29b-41d4-a716-446655440001',
+  {
+    method: 'PUT',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      action: 'write',
+      resource: 'departments',
+      conditions: {
+        department_id: '123e4567-e89b-12d3-a456-426614174000'
+      }
+    })
+  }
+);
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+url = "https://api.companyflow.com/roles/550e8400-e29b-41d4-a716-446655440000/permissions/660e8400-e29b-41d4-a716-446655440001"
+headers = {
+    "Authorization": "Bearer YOUR_TOKEN",
+    "Content-Type": "application/json"
+}
+payload = {
+    "action": "write",
+    "resource": "departments",
+    "conditions": {
+        "department_id": "123e4567-e89b-12d3-a456-426614174000"
+    }
+}
+
+response = requests.put(url, json=payload, headers=headers)
+data = response.json()
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "company_id": "123e4567-e89b-12d3-a456-426614174000",
+    "name": "Department Manager",
+    "description": "Can manage specific departments",
+    "is_system_role": false,
+    "permissions_cache": [
+      "employees:read",
+      "departments:read",
+      "departments:write"
+    ],
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2025-03-03T14:20:00Z"
+  }
+}
+```
+
+```json 400 - Bad Request
+{
+  "success": false,
+  "message": "invalid role_id"
+}
+```
+
+```json 401 - Unauthorized
+{
+  "success": false,
+  "message": "unauthorized"
+}
+```
+
+```json 500 - Internal Server Error
+{
+  "success": false,
+  "message": "internal server error"
+}
+```
+</ResponseExample>
+
+## Authorization
+
+This endpoint requires authentication with a Bearer token and one of the following roles:
+- **Super Admin**
+- **HR Manager**
+
+<Note>
+  This endpoint adds a permission without removing existing ones. To replace all permissions, use the [Assign Permissions](/api/permissions/assign) endpoint.
+</Note>

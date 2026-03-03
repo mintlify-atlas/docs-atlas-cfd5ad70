@@ -1,0 +1,237 @@
+---
+title: 'Approve Memo'
+api: 'POST /memos/{id}/approve'
+description: 'Approve a memo at the current workflow step'
+---
+
+Approve a memo at its current workflow approval step. This moves the memo forward in the approval chain or marks it as fully approved if this is the final step.
+
+## Authentication
+
+Requires authentication with Bearer token. Available to:
+- **Manager**
+- **HR Manager**
+- **Super Admin**
+
+<Warning>
+  Only users with approval authority at the current workflow step can approve the memo. Employees without manager privileges cannot access this endpoint.
+</Warning>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the memo (UUID format)
+  
+  **Example:** `"550e8400-e29b-41d4-a716-446655440000"`
+</ParamField>
+
+## Request Body
+
+<ParamField body="comments" type="string">
+  Optional approval comments or notes
+  
+  **Example:** `"Approved - looks good to proceed"`
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The updated memo object with new approval status
+  
+  <Expandable title="Memo properties">
+    <ResponseField name="id" type="string">
+      Unique identifier for the memo
+    </ResponseField>
+    
+    <ResponseField name="company_id" type="string">
+      UUID of the company
+    </ResponseField>
+    
+    <ResponseField name="created_by" type="string">
+      UUID of the employee who created the memo
+    </ResponseField>
+    
+    <ResponseField name="memo_type" type="string">
+      Type of memo (e.g., "announcement", "policy", "notice")
+    </ResponseField>
+    
+    <ResponseField name="title" type="string">
+      Memo title
+    </ResponseField>
+    
+    <ResponseField name="content" type="string">
+      Full memo content
+    </ResponseField>
+    
+    <ResponseField name="reference_number" type="string">
+      Unique reference number for the memo
+    </ResponseField>
+    
+    <ResponseField name="priority" type="string">
+      Priority level: "low", "medium", or "high"
+    </ResponseField>
+    
+    <ResponseField name="status" type="string">
+      Current status: "draft", "pending", "approved", or "rejected"
+    </ResponseField>
+    
+    <ResponseField name="current_step" type="integer">
+      Current approval workflow step
+    </ResponseField>
+    
+    <ResponseField name="approved_by" type="string">
+      UUID of the approver (null if not yet approved)
+    </ResponseField>
+    
+    <ResponseField name="approved_at" type="string">
+      Approval timestamp
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.companyflow.com/memos/550e8400-e29b-41d4-a716-446655440000/approve \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "comments": "Approved - looks good to proceed"
+  }'
+```
+
+```javascript JavaScript
+const memoId = '550e8400-e29b-41d4-a716-446655440000';
+
+const response = await fetch(
+  `https://api.companyflow.com/memos/${memoId}/approve`,
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      comments: 'Approved - looks good to proceed'
+    })
+  }
+);
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+memo_id = '550e8400-e29b-41d4-a716-446655440000'
+url = f'https://api.companyflow.com/memos/{memo_id}/approve'
+headers = {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+}
+payload = {
+    'comments': 'Approved - looks good to proceed'
+}
+
+response = requests.post(url, json=payload, headers=headers)
+data = response.json()
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "company_id": "123e4567-e89b-12d3-a456-426614174000",
+    "created_by": "987e6543-e21b-12d3-a456-426614174000",
+    "memo_type": "policy",
+    "title": "Updated Remote Work Policy",
+    "content": "Effective immediately, all employees are eligible for hybrid work arrangements...",
+    "reference_number": "MEMO-2025-001",
+    "priority": "high",
+    "status": "approved",
+    "current_step": 2,
+    "approved_by": "abc12345-e89b-12d3-a456-426614174000",
+    "approved_at": "2025-03-03T15:30:00Z",
+    "created_at": "2025-03-03T10:00:00Z",
+    "updated_at": "2025-03-03T15:30:00Z"
+  }
+}
+```
+
+```json 400 - Bad Request (Invalid memo ID)
+{
+  "success": false,
+  "message": "invalid memo id"
+}
+```
+
+```json 400 - Bad Request (Not authorized to approve)
+{
+  "success": false,
+  "message": "you are not authorized to approve this memo at the current step"
+}
+```
+
+```json 401 - Unauthorized
+{
+  "success": false,
+  "message": "unauthorized"
+}
+```
+</ResponseExample>
+
+## Approval Workflow
+
+<Steps>
+  <Step title="Memo Creation">
+    A memo is created with status `draft` or `pending`
+  </Step>
+  
+  <Step title="Workflow Steps">
+    The memo moves through approval steps defined in the workflow configuration
+  </Step>
+  
+  <Step title="Manager Approval">
+    Authorized managers approve at each step using this endpoint
+  </Step>
+  
+  <Step title="Final Status">
+    After all approvals, the memo status becomes `approved` and is visible to all recipients
+  </Step>
+</Steps>
+
+## Authorization Rules
+
+<Info>
+  **Who can approve:**
+  
+  - The memo must be at a workflow step where the current user has approval authority
+  - Managers can typically approve memos from their direct reports or department
+  - HR Managers and Super Admins can approve any memo
+  - The approval authority is determined by the workflow configuration
+</Info>
+
+<Tip>
+  Include meaningful comments when approving to provide context for the memo creator and other stakeholders in the approval chain.
+</Tip>
+
+## Related Endpoints
+
+- [Reject Memo](/api/memos/reject) - Reject a memo with reason
+- [Get Memo](/api/memos/get) - View memo details and approval status
+- [List Memos](/api/memos/list) - View memos with filtering by status
+- [Create Memo](/api/memos/create) - Create a new memo

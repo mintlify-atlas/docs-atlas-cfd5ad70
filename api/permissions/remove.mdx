@@ -1,0 +1,156 @@
+---
+title: 'Remove Permission'
+api: 'DELETE /roles/{role_id}/permissions/{permission_id}'
+description: 'Remove a single permission from a role'
+---
+
+Remove a specific permission from a role. This allows you to revoke individual permissions without affecting other permissions assigned to the role. Requires Super Admin or HR Manager permissions.
+
+## Path Parameters
+
+<ParamField path="role_id" type="string" required>
+  The unique identifier of the role (UUID format)
+  
+  **Example:** `"550e8400-e29b-41d4-a716-446655440000"`
+</ParamField>
+
+<ParamField path="permission_id" type="string" required>
+  The unique identifier of the permission to remove (UUID format)
+  
+  **Example:** `"770e8400-e29b-41d4-a716-446655440000"`
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The updated role object after permission removal
+  
+  <Expandable title="Role Object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the role
+    </ResponseField>
+    
+    <ResponseField name="company_id" type="string">
+      The company this role belongs to
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Name of the role
+    </ResponseField>
+    
+    <ResponseField name="description" type="string">
+      Description of the role
+    </ResponseField>
+    
+    <ResponseField name="is_system_role" type="boolean">
+      Whether this is a system-defined role
+    </ResponseField>
+    
+    <ResponseField name="permissions_cache" type="string[]">
+      Array of cached permission strings (updated to reflect removal)
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the role was created
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of when the role was last updated
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE https://api.companyflow.com/roles/550e8400-e29b-41d4-a716-446655440000/permissions/770e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.companyflow.com/roles/550e8400-e29b-41d4-a716-446655440000/permissions/770e8400-e29b-41d4-a716-446655440000',
+  {
+    method: 'DELETE',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN'
+    }
+  }
+);
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+url = "https://api.companyflow.com/roles/550e8400-e29b-41d4-a716-446655440000/permissions/770e8400-e29b-41d4-a716-446655440000"
+headers = {
+    "Authorization": "Bearer YOUR_TOKEN"
+}
+
+response = requests.delete(url, headers=headers)
+data = response.json()
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "company_id": "123e4567-e89b-12d3-a456-426614174000",
+    "name": "Department Manager",
+    "description": "Can manage specific departments",
+    "is_system_role": false,
+    "permissions_cache": [
+      "employees:read",
+      "departments:read"
+    ],
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2025-03-03T14:25:00Z"
+  }
+}
+```
+
+```json 400 - Bad Request
+{
+  "success": false,
+  "message": "invalid role_id"
+}
+```
+
+```json 401 - Unauthorized
+{
+  "success": false,
+  "message": "unauthorized"
+}
+```
+
+```json 500 - Internal Server Error
+{
+  "success": false,
+  "message": "internal server error"
+}
+```
+</ResponseExample>
+
+## Authorization
+
+This endpoint requires authentication with a Bearer token and one of the following roles:
+- **Super Admin**
+- **HR Manager**
+
+<Warning>
+  Removing a permission will immediately affect all users assigned to this role. Ensure this action is intentional before proceeding.
+</Warning>
+
+## Related endpoints
+
+- [Add Permission](/api/permissions/add) - Add a single permission to a role
+- [List Permissions](/api/permissions/list) - View all permissions for a role
+- [Assign Permissions](/api/permissions/assign) - Replace all permissions for a role

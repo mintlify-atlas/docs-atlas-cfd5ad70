@@ -1,0 +1,248 @@
+---
+title: 'Get Employee Leave Balances'
+api: 'GET /employees/{employee_id}/leave-balances'
+description: "Get all leave balances for a specific employee"
+---
+
+Retrieve all leave balances for an employee across all leave types for a specific year. This provides a comprehensive view of an employee's leave allocation and usage.
+
+## Authentication
+
+Requires authentication with Bearer token. Available to:
+- **Super Admin**
+- **HR Manager**
+- **Employee** (can view their own balances)
+- **Manager** (can view their team members' balances)
+
+## Path Parameters
+
+<ParamField path="employee_id" type="string" required>
+  The unique identifier of the employee (UUID format)
+  
+  **Example:** `"987e6543-e21b-12d3-a456-426614174000"`
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="year" type="integer" required>
+  The year to retrieve balances for (between 2020 and 2100)
+  
+  **Example:** `2025`
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of leave balance objects for each leave type
+  
+  <Expandable title="LeaveBalance properties">
+    <ResponseField name="id" type="string">
+      Unique identifier for this leave balance record
+    </ResponseField>
+    
+    <ResponseField name="employee_id" type="string">
+      UUID of the employee
+    </ResponseField>
+    
+    <ResponseField name="leave_type_id" type="string">
+      UUID of the leave type
+    </ResponseField>
+    
+    <ResponseField name="year" type="integer">
+      The year this balance applies to
+    </ResponseField>
+    
+    <ResponseField name="total_days" type="number">
+      Total days allocated for this leave type (including carry forward)
+    </ResponseField>
+    
+    <ResponseField name="used_days" type="number">
+      Days already taken (approved leave)
+    </ResponseField>
+    
+    <ResponseField name="pending_days" type="number">
+      Days with pending approval
+    </ResponseField>
+    
+    <ResponseField name="available_days" type="number">
+      Days available to request (total - used - pending)
+    </ResponseField>
+    
+    <ResponseField name="carried_forward_days" type="number">
+      Days carried forward from previous year
+    </ResponseField>
+    
+    <ResponseField name="leave_type" type="object">
+      Associated leave type information
+      
+      <Expandable title="LeaveType properties">
+        <ResponseField name="id" type="string">
+          Leave type ID
+        </ResponseField>
+        
+        <ResponseField name="name" type="string">
+          Leave type name
+        </ResponseField>
+        
+        <ResponseField name="code" type="string">
+          Leave type code
+        </ResponseField>
+        
+        <ResponseField name="color_code" type="string">
+          Hex color code
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.companyflow.com/employees/987e6543-e21b-12d3-a456-426614174000/leave-balances?year=2025" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```javascript JavaScript
+const employeeId = '987e6543-e21b-12d3-a456-426614174000';
+const year = 2025;
+
+const response = await fetch(
+  `https://api.companyflow.com/employees/${employeeId}/leave-balances?year=${year}`,
+  {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN'
+    }
+  }
+);
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+employee_id = '987e6543-e21b-12d3-a456-426614174000'
+url = f'https://api.companyflow.com/employees/{employee_id}/leave-balances'
+headers = {
+    'Authorization': 'Bearer YOUR_TOKEN'
+}
+params = {
+    'year': 2025
+}
+
+response = requests.get(url, headers=headers, params=params)
+data = response.json()
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "success": true,
+  "data": [
+    {
+      "id": "bal-001-uuid",
+      "employee_id": "987e6543-e21b-12d3-a456-426614174000",
+      "leave_type_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "year": 2025,
+      "total_days": 22,
+      "used_days": 5,
+      "pending_days": 1.5,
+      "available_days": 15.5,
+      "carried_forward_days": 2,
+      "leave_type": {
+        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "name": "Annual Leave",
+        "code": "AL",
+        "color_code": "#3B82F6"
+      },
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-03-03T10:30:00Z"
+    },
+    {
+      "id": "bal-002-uuid",
+      "employee_id": "987e6543-e21b-12d3-a456-426614174000",
+      "leave_type_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "year": 2025,
+      "total_days": 10,
+      "used_days": 2,
+      "pending_days": 0,
+      "available_days": 8,
+      "carried_forward_days": 0,
+      "leave_type": {
+        "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+        "name": "Sick Leave",
+        "code": "SL",
+        "color_code": "#EF4444"
+      },
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-02-15T14:20:00Z"
+    }
+  ]
+}
+```
+
+```json 400 - Bad Request (Invalid employee ID)
+{
+  "success": false,
+  "message": "invalid employee id"
+}
+```
+
+```json 400 - Bad Request (Missing year)
+{
+  "success": false,
+  "message": "year is required"
+}
+```
+
+```json 401 - Unauthorized
+{
+  "success": false,
+  "message": "unauthorized"
+}
+```
+</ResponseExample>
+
+## Understanding Balance Fields
+
+<Info>
+  **Balance Calculation:**
+  
+  `available_days = total_days - used_days - pending_days`
+  
+  Where `total_days` includes any carried forward days from the previous year.
+</Info>
+
+## Use Cases
+
+This endpoint is useful for:
+
+- **HR dashboards**: View comprehensive leave status for any employee
+- **Manager views**: Check team member leave balances before approving requests
+- **Employee portals**: Display personal leave overview
+- **Year-end reporting**: Generate annual leave usage reports
+- **Leave planning**: Help employees plan their leave across different types
+
+<Tip>
+  Use this endpoint at the start of a leave request workflow to show employees all their available balances across different leave types.
+</Tip>
+
+## Related Endpoints
+
+- [Check Balance](/api/leaves/balances/check) - Quick balance check for current user
+- [Get Balance by Type](/api/leaves/balances/by-type) - Detailed balance for specific leave type
+- [List Leave Types](/api/leaves/types/list) - View all available leave types

@@ -119,17 +119,36 @@
               "api/roles/update",
               "api/roles/delete",
               "api/permissions/assign",
-              "api/permissions/list"
+              "api/permissions/list",
+              "api/permissions/add",
+              "api/permissions/remove"
             ]
           },
           {
-            "group": "Leave Management",
+            "group": "Leave Types",
+            "pages": [
+              "api/leaves/types/create",
+              "api/leaves/types/list",
+              "api/leaves/types/get",
+              "api/leaves/types/update",
+              "api/leaves/types/delete"
+            ]
+          },
+          {
+            "group": "Leave Requests",
             "pages": [
               "api/leaves/create",
               "api/leaves/list",
               "api/leaves/get",
-              "api/leaves/update",
-              "api/leaves/delete"
+              "api/leaves/update"
+            ]
+          },
+          {
+            "group": "Leave Balances",
+            "pages": [
+              "api/leaves/balances/check",
+              "api/leaves/balances/employee",
+              "api/leaves/balances/by-type"
             ]
           },
           {
@@ -138,8 +157,9 @@
               "api/memos/create",
               "api/memos/list",
               "api/memos/get",
-              "api/memos/update",
-              "api/memos/delete"
+              "api/memos/read",
+              "api/memos/approve",
+              "api/memos/reject"
             ]
           },
           {

@@ -1,0 +1,152 @@
+---
+title: 'Mark Memo as Read'
+api: 'POST /memos/{id}/read'
+description: 'Mark a memo as read for the authenticated user'
+---
+
+Mark a memo as read by the authenticated employee. This updates the read status for the memo recipient and tracks when the memo was acknowledged.
+
+## Authentication
+
+Requires authentication with Bearer token. Available to:
+- **Employee**
+- **Manager**
+- **HR Manager**
+- **Super Admin**
+
+<Note>
+  Only memo recipients can mark the memo as read. The system automatically tracks which employee marked it as read based on the authentication token.
+</Note>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the memo (UUID format)
+  
+  **Example:** `"550e8400-e29b-41d4-a716-446655440000"`
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.companyflow.com/memos/550e8400-e29b-41d4-a716-446655440000/read \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```javascript JavaScript
+const memoId = '550e8400-e29b-41d4-a716-446655440000';
+
+const response = await fetch(
+  `https://api.companyflow.com/memos/${memoId}/read`,
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN'
+    }
+  }
+);
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+memo_id = '550e8400-e29b-41d4-a716-446655440000'
+url = f'https://api.companyflow.com/memos/{memo_id}/read'
+headers = {
+    'Authorization': 'Bearer YOUR_TOKEN'
+}
+
+response = requests.post(url, headers=headers)
+data = response.json()
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "success": true,
+  "message": "memo marked as read"
+}
+```
+
+```json 400 - Bad Request (Invalid memo ID)
+{
+  "success": false,
+  "message": "invalid memo id"
+}
+```
+
+```json 400 - Bad Request (Not a recipient)
+{
+  "success": false,
+  "message": "you are not a recipient of this memo"
+}
+```
+
+```json 401 - Unauthorized
+{
+  "success": false,
+  "message": "unauthorized"
+}
+```
+</ResponseExample>
+
+## Behavior
+
+<Info>
+  **Key behaviors:**
+  
+  - Marking a memo as read is idempotent - calling it multiple times has no additional effect
+  - The read timestamp is recorded the first time this endpoint is called
+  - Read status is tracked per recipient (multiple recipients can have different read states)
+  - Only the recipient specified in the memo's recipient list can mark it as read
+</Info>
+
+## Use Cases
+
+This endpoint is typically used when:
+
+- An employee opens and views a memo in their inbox
+- Building read receipt functionality in notification systems
+- Tracking memo acknowledgment for compliance purposes
+- Updating unread badge counts in the UI
+
+## Memo Read Tracking
+
+The system tracks:
+
+<AccordionGroup>
+  <Accordion title="Who read it">
+    The employee ID is captured from the authentication token
+  </Accordion>
+  
+  <Accordion title="When it was read">
+    A timestamp is recorded when the endpoint is first called
+  </Accordion>
+  
+  <Accordion title="Read percentage">
+    Admins and memo creators can see what percentage of recipients have read the memo
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+  In your UI, automatically call this endpoint when a user opens a memo detail page to keep read status synchronized.
+</Tip>
+
+## Related Endpoints
+
+- [Get Memo](/api/memos/get) - Retrieve memo details
+- [List Memos](/api/memos/list) - View all memos (can filter by read/unread)
+- [Approve Memo](/api/memos/approve) - Approve a memo (managers)
+- [Reject Memo](/api/memos/reject) - Reject a memo (managers)
