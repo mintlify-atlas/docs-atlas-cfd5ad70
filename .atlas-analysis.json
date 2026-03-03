@@ -1,0 +1,186 @@
+{
+  "projectType": "api-service",
+  "projectName": "CompanyFlow",
+  "projectDescription": "A multi-tenant HRMS and ERP backend API for managing companies, employees, departments, leaves, and approvals.",
+  "theme": "aspen",
+  "primaryColor": "#2563eb",
+  "lightColor": "#3b82f6",
+  "darkColor": "#1e40af",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/multi-tenancy",
+              "concepts/authentication",
+              "concepts/authorization"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/database-setup",
+              "guides/environment-configuration",
+              "guides/running-migrations",
+              "guides/testing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Authentication",
+            "pages": [
+              "api/auth/login"
+            ]
+          },
+          {
+            "group": "Companies",
+            "pages": [
+              "api/companies/create",
+              "api/companies/list",
+              "api/companies/get",
+              "api/companies/update",
+              "api/companies/delete"
+            ]
+          },
+          {
+            "group": "Employees",
+            "pages": [
+              "api/employees/create",
+              "api/employees/list",
+              "api/employees/get",
+              "api/employees/update",
+              "api/employees/delete",
+              "api/employees/bulk-upload"
+            ]
+          },
+          {
+            "group": "Departments",
+            "pages": [
+              "api/departments/create",
+              "api/departments/list",
+              "api/departments/get",
+              "api/departments/update",
+              "api/departments/delete"
+            ]
+          },
+          {
+            "group": "Designations",
+            "pages": [
+              "api/designations/create",
+              "api/designations/list",
+              "api/designations/get",
+              "api/designations/update",
+              "api/designations/delete"
+            ]
+          },
+          {
+            "group": "Levels",
+            "pages": [
+              "api/levels/create",
+              "api/levels/list",
+              "api/levels/get",
+              "api/levels/update",
+              "api/levels/delete"
+            ]
+          },
+          {
+            "group": "Roles & Permissions",
+            "pages": [
+              "api/roles/create",
+              "api/roles/list",
+              "api/roles/get",
+              "api/roles/update",
+              "api/roles/delete",
+              "api/permissions/assign",
+              "api/permissions/list"
+            ]
+          },
+          {
+            "group": "Leave Management",
+            "pages": [
+              "api/leaves/create",
+              "api/leaves/list",
+              "api/leaves/get",
+              "api/leaves/update",
+              "api/leaves/delete"
+            ]
+          },
+          {
+            "group": "Memos",
+            "pages": [
+              "api/memos/create",
+              "api/memos/list",
+              "api/memos/get",
+              "api/memos/update",
+              "api/memos/delete"
+            ]
+          },
+          {
+            "group": "Approvals",
+            "pages": [
+              "api/approvals/create",
+              "api/approvals/list",
+              "api/approvals/get",
+              "api/approvals/update"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Multi-tenant architecture with company isolation",
+    "Role-based access control (RBAC)",
+    "Employee management with bulk operations",
+    "Leave request and approval workflows",
+    "Department and organizational structure management",
+    "Memo system with approval tracking",
+    "JWT-based authentication",
+    "Audit logging for compliance"
+  ],
+  "publicApiSurface": [
+    "POST /auth/login",
+    "POST /companies",
+    "GET /companies",
+    "GET /companies/{id}",
+    "PUT /companies/{id}",
+    "DELETE /companies/{id}",
+    "POST /companies/{company_id}/employees",
+    "GET /companies/{company_id}/employees",
+    "GET /employees/{id}",
+    "PUT /employees/{id}",
+    "DELETE /employees/{id}",
+    "POST /companies/{company_id}/employees/bulk",
+    "POST /companies/{company_id}/departments",
+    "GET /companies/{company_id}/departments",
+    "POST /companies/{company_id}/designations",
+    "GET /companies/{company_id}/designations",
+    "POST /companies/{company_id}/levels",
+    "GET /companies/{company_id}/levels",
+    "POST /companies/{company_id}/roles",
+    "GET /companies/{company_id}/roles",
+    "POST /roles/{role_id}/permissions",
+    "GET /companies/{company_id}/leaves",
+    "POST /companies/{company_id}/leaves",
+    "GET /companies/{company_id}/memos",
+    "POST /companies/{company_id}/memos",
+    "GET /approvals",
+    "POST /approvals/{id}/approve",
+    "POST /approvals/{id}/reject"
+  ]
+}
