@@ -1,0 +1,273 @@
+---
+title: 'Request Leave'
+api: 'POST /leave-requests'
+description: 'Submit a new leave request for approval'
+---
+
+## Overview
+
+Employees can submit leave requests specifying the leave type, dates, and reason. The request enters the approval workflow and deducts from the employee's available leave balance upon approval.
+
+## Authentication
+
+Requires authentication with Bearer token. Available to:
+- Employee
+- Manager
+
+## Request body
+
+<ParamField body="leaveTypeId" type="string" required>
+  UUID of the leave type (e.g., Annual Leave, Sick Leave)
+</ParamField>
+
+<ParamField body="startDate" type="string" required>
+  Leave start date in YYYY-MM-DD format (e.g., "2025-02-10")
+</ParamField>
+
+<ParamField body="endDate" type="string" required>
+  Leave end date in YYYY-MM-DD format (e.g., "2025-02-15")
+</ParamField>
+
+<ParamField body="daysRequested" type="number" required>
+  Total number of leave days requested (supports half days with decimal values like 0.5)
+</ParamField>
+
+<ParamField body="reason" type="string" required>
+  Explanation for the leave request
+</ParamField>
+
+<ParamField body="attachment" type="string">
+  Optional attachment URL (e.g., medical certificate for sick leave)
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The created leave request object
+  
+  <Expandable title="LeaveRequest properties">
+    <ResponseField name="id" type="string">
+      Unique identifier for the leave request
+    </ResponseField>
+    
+    <ResponseField name="employeeId" type="string">
+      UUID of the employee who submitted the request
+    </ResponseField>
+    
+    <ResponseField name="leaveTypeId" type="string">
+      UUID of the leave type
+    </ResponseField>
+    
+    <ResponseField name="startDate" type="string">
+      Leave start date (ISO 8601 format)
+    </ResponseField>
+    
+    <ResponseField name="endDate" type="string">
+      Leave end date (ISO 8601 format)
+    </ResponseField>
+    
+    <ResponseField name="daysRequested" type="number">
+      Number of days requested
+    </ResponseField>
+    
+    <ResponseField name="reason" type="string">
+      Reason for leave
+    </ResponseField>
+    
+    <ResponseField name="attachmentUrl" type="string">
+      URL of the attached document (if provided)
+    </ResponseField>
+    
+    <ResponseField name="status" type="string">
+      Current status: `pending`, `approved`, `rejected`, `cancelled`, or `withdrawn`
+    </ResponseField>
+    
+    <ResponseField name="currentStep" type="integer">
+      Current approval workflow step
+    </ResponseField>
+    
+    <ResponseField name="approvedBy" type="string">
+      UUID of the approver (null if not yet approved)
+    </ResponseField>
+    
+    <ResponseField name="approvedAt" type="string">
+      Approval timestamp (null if not yet approved)
+    </ResponseField>
+    
+    <ResponseField name="rejectionReason" type="string">
+      Reason for rejection (empty if not rejected)
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="string">
+      Request creation timestamp
+    </ResponseField>
+    
+    <ResponseField name="updatedAt" type="string">
+      Last update timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.companyflow.com/leave-requests \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "leaveTypeId": "123e4567-e89b-12d3-a456-426614174000",
+    "startDate": "2025-03-15",
+    "endDate": "2025-03-19",
+    "daysRequested": 5,
+    "reason": "Family vacation",
+    "attachment": ""
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.companyflow.com/leave-requests', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    leaveTypeId: '123e4567-e89b-12d3-a456-426614174000',
+    startDate: '2025-03-15',
+    endDate: '2025-03-19',
+    daysRequested: 5,
+    reason: 'Family vacation'
+  })
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+url = 'https://api.companyflow.com/leave-requests'
+headers = {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+}
+payload = {
+    'leaveTypeId': '123e4567-e89b-12d3-a456-426614174000',
+    'startDate': '2025-03-15',
+    'endDate': '2025-03-19',
+    'daysRequested': 5,
+    'reason': 'Family vacation'
+}
+
+response = requests.post(url, json=payload, headers=headers)
+data = response.json()
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "success": true,
+  "data": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "employeeId": "987e6543-e21b-12d3-a456-426614174000",
+    "leaveTypeId": "123e4567-e89b-12d3-a456-426614174000",
+    "startDate": "2025-03-15T00:00:00Z",
+    "endDate": "2025-03-19T00:00:00Z",
+    "daysRequested": 5,
+    "reason": "Family vacation",
+    "attachmentUrl": null,
+    "status": "pending",
+    "currentStep": 1,
+    "approvedBy": null,
+    "approvedAt": null,
+    "rejectionReason": "",
+    "createdAt": "2025-03-03T10:30:00Z",
+    "updatedAt": "2025-03-03T10:30:00Z"
+  }
+}
+```
+</ResponseExample>
+
+## Leave types
+
+Common leave types include:
+
+<AccordionGroup>
+  <Accordion title="Annual Leave">
+    Standard paid vacation time allocated to employees annually. Typically allows carry-forward of unused days.
+  </Accordion>
+  
+  <Accordion title="Sick Leave">
+    Paid time off for medical reasons. May require medical documentation if configured in the leave type settings.
+  </Accordion>
+  
+  <Accordion title="Unpaid Leave">
+    Time off without pay. No balance deduction required.
+  </Accordion>
+  
+  <Accordion title="Maternity/Paternity Leave">
+    Extended leave for parents. Paid status and duration vary by company policy.
+  </Accordion>
+</AccordionGroup>
+
+## Validation rules
+
+<Warning>
+  The system validates several conditions before accepting a leave request:
+  
+  - End date must be equal to or after start date
+  - Employee must have sufficient available balance for the leave type
+  - Dates cannot overlap with existing approved leave requests
+  - Days requested must match the actual working days between start and end dates
+</Warning>
+
+## Approval workflow
+
+Once submitted, leave requests follow this workflow:
+
+<Steps>
+  <Step title="Pending">
+    Request is created with status `pending` and awaits manager approval.
+  </Step>
+  
+  <Step title="Review">
+    Manager reviews the request and can either approve or reject it.
+  </Step>
+  
+  <Step title="Final status">
+    Request reaches final status: `approved`, `rejected`, or `withdrawn` (if employee cancels).
+  </Step>
+  
+  <Step title="Balance update">
+    If approved, the system deducts days from the employee's leave balance.
+  </Step>
+</Steps>
+
+## Error responses
+
+<ResponseExample>
+```json Insufficient balance
+{
+  "success": false,
+  "message": "insufficient leave balance"
+}
+```
+
+```json Invalid dates
+{
+  "success": false,
+  "message": "end date must be after or equal to start date"
+}
+```
+
+```json Overlapping request
+{
+  "success": false,
+  "message": "leave request overlaps with existing approved leave"
+}
+```
+</ResponseExample>

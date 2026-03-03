@@ -1,0 +1,147 @@
+---
+title: "Create Level"
+api: "POST /companies/{company_id}/levels"
+description: "Create a new organizational level for a company"
+---
+
+## Authorization
+
+Requires authentication with a Bearer token. Only users with the following roles can create levels:
+- Super Admin
+- HR Manager
+
+## Path Parameters
+
+<ParamField path="company_id" type="string" required>
+  The unique identifier of the company
+</ParamField>
+
+## Request Body
+
+<ParamField body="name" type="string" required>
+  Name of the level (2-255 characters)
+</ParamField>
+
+<ParamField body="hierarchy_level" type="integer" required>
+  Hierarchy level number (minimum 1). Used for ordering levels within the organization.
+</ParamField>
+
+<ParamField body="min_salary" type="number">
+  Minimum salary for this level (must be non-negative)
+</ParamField>
+
+<ParamField body="max_salary" type="number">
+  Maximum salary for this level (must be non-negative)
+</ParamField>
+
+<ParamField body="description" type="string">
+  Description of the level
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The created level object
+  
+  <Expandable title="Level Response">
+    <ResponseField name="id" type="string">
+      Unique identifier for the level
+    </ResponseField>
+    
+    <ResponseField name="company_id" type="string">
+      The company this level belongs to
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Name of the level
+    </ResponseField>
+    
+    <ResponseField name="hierarchy_level" type="integer">
+      Hierarchy level number
+    </ResponseField>
+    
+    <ResponseField name="min_salary" type="number">
+      Minimum salary for this level
+    </ResponseField>
+    
+    <ResponseField name="max_salary" type="number">
+      Maximum salary for this level
+    </ResponseField>
+    
+    <ResponseField name="description" type="string">
+      Description of the level
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      Timestamp when the level was created
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string">
+      Timestamp when the level was last updated
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```json
+{
+  "name": "Senior Engineer",
+  "hierarchy_level": 3,
+  "min_salary": 80000,
+  "max_salary": 120000,
+  "description": "Senior level individual contributor"
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "company_id": "123e4567-e89b-12d3-a456-426614174000",
+    "name": "Senior Engineer",
+    "hierarchy_level": 3,
+    "min_salary": 80000,
+    "max_salary": 120000,
+    "description": "Senior level individual contributor",
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+<ResponseExample>
+```json 400 Bad Request
+{
+  "success": false,
+  "message": "invalid request body"
+}
+```
+</ResponseExample>
+
+<ResponseExample>
+```json 401 Unauthorized
+{
+  "success": false,
+  "message": "unauthorized"
+}
+```
+</ResponseExample>
+
+<ResponseExample>
+```json 500 Internal Server Error
+{
+  "success": false,
+  "message": "internal server error"
+}
+```
+</ResponseExample>

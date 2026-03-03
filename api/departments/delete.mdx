@@ -1,0 +1,79 @@
+---
+title: 'Delete Department'
+api: 'DELETE /departments/{id}'
+description: 'Delete a department (soft delete by default)'
+---
+
+## Authentication
+
+This endpoint requires authentication with a Bearer token. Only users with **Super Admin** or **HR Manager** roles can delete departments.
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the department to delete
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="hard_delete" type="boolean" default="false">
+  If `true`, permanently deletes the department. If `false` or omitted, performs a soft delete.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message
+</ResponseField>
+
+<RequestExample>
+
+```bash Soft Delete
+curl -X DELETE https://api.companyflow.com/departments/{id} \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash Hard Delete
+curl -X DELETE "https://api.companyflow.com/departments/{id}?hard_delete=true" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200 - Success
+{
+  "success": true,
+  "message": "department deleted"
+}
+```
+
+```json 400 - Bad Request
+{
+  "success": false,
+  "message": "invalid department id"
+}
+```
+
+```json 401 - Unauthorized
+{
+  "success": false,
+  "message": "insufficient role"
+}
+```
+
+```json 500 - Internal Server Error
+{
+  "success": false,
+  "message": "failed to delete department"
+}
+```
+
+</ResponseExample>
+
+<Note>
+  Soft delete marks the department as deleted but preserves the data in the database. Hard delete permanently removes the department record.
+</Note>

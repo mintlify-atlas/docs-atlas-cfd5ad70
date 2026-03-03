@@ -1,0 +1,153 @@
+---
+title: "List Designations"
+api: "GET /companies/{company_id}/designations"
+description: "Get a paginated list of designations for a company"
+---
+
+Retrieve a paginated list of designations for a specific company with optional filtering and search capabilities.
+
+## Path Parameters
+
+<ParamField path="company_id" type="string" required>
+  The unique identifier of the company
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="page_size" type="integer" default="10">
+  Number of items per page
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by designation status (`active` or `inactive`)
+</ParamField>
+
+<ParamField query="department_id" type="string">
+  Filter by department UUID
+</ParamField>
+
+<ParamField query="level_id" type="string">
+  Filter by level UUID
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search by designation title or code
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Paginated designation data
+  
+  <Expandable title="Pagination Object">
+    <ResponseField name="items" type="array">
+      Array of designation objects
+      
+      <Expandable title="Designation Object">
+        <ResponseField name="id" type="string">
+          Unique identifier of the designation
+        </ResponseField>
+        
+        <ResponseField name="company_id" type="string">
+          The company ID this designation belongs to
+        </ResponseField>
+        
+        <ResponseField name="name" type="string">
+          The name of the designation
+        </ResponseField>
+        
+        <ResponseField name="description" type="string">
+          Description of the designation
+        </ResponseField>
+        
+        <ResponseField name="level_id" type="string">
+          UUID of the associated level (nullable)
+        </ResponseField>
+        
+        <ResponseField name="department_id" type="string">
+          UUID of the associated department (nullable)
+        </ResponseField>
+        
+        <ResponseField name="status" type="string">
+          Status of the designation (active/inactive)
+        </ResponseField>
+        
+        <ResponseField name="created_at" type="string">
+          Timestamp when the designation was created
+        </ResponseField>
+        
+        <ResponseField name="updated_at" type="string">
+          Timestamp when the designation was last updated
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="page" type="integer">
+      Current page number
+    </ResponseField>
+    
+    <ResponseField name="page_size" type="integer">
+      Number of items per page
+    </ResponseField>
+    
+    <ResponseField name="total" type="integer">
+      Total number of designations
+    </ResponseField>
+    
+    <ResponseField name="total_pages" type="integer">
+      Total number of pages
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash
+GET /companies/789e4567-e89b-12d3-a456-426614174000/designations?page=1&page_size=10&status=active&search=engineer
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "123e4567-e89b-12d3-a456-426614174000",
+        "company_id": "789e4567-e89b-12d3-a456-426614174000",
+        "name": "Senior Software Engineer",
+        "description": "Senior level software engineering position",
+        "level_id": "550e8400-e29b-41d4-a716-446655440000",
+        "department_id": "660e8400-e29b-41d4-a716-446655440000",
+        "status": "active",
+        "created_at": "2026-03-03T10:00:00Z",
+        "updated_at": "2026-03-03T10:00:00Z"
+      },
+      {
+        "id": "223e4567-e89b-12d3-a456-426614174000",
+        "company_id": "789e4567-e89b-12d3-a456-426614174000",
+        "name": "Software Engineer",
+        "description": "Mid-level software engineering position",
+        "level_id": "550e8400-e29b-41d4-a716-446655440001",
+        "department_id": "660e8400-e29b-41d4-a716-446655440000",
+        "status": "active",
+        "created_at": "2026-03-02T10:00:00Z",
+        "updated_at": "2026-03-02T10:00:00Z"
+      }
+    ],
+    "page": 1,
+    "page_size": 10,
+    "total": 2,
+    "total_pages": 1
+  }
+}
+```
+</ResponseExample>

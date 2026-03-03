@@ -1,0 +1,42 @@
+---
+title: "Delete Designation"
+api: "DELETE /designations/{id}"
+description: "Delete a designation by ID"
+---
+
+Delete a specific designation using its unique identifier. This endpoint requires Super Admin or HR Manager role.
+
+<Warning>
+  This action cannot be undone. Make sure you want to permanently delete this designation before proceeding.
+</Warning>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the designation (UUID)
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message
+</ResponseField>
+
+<RequestExample>
+```bash
+DELETE /designations/123e4567-e89b-12d3-a456-426614174000
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "message": "designation deleted"
+}
+```
+</ResponseExample>

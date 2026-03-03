@@ -1,0 +1,86 @@
+---
+title: "Get Designation"
+api: "GET /designations/{id}"
+description: "Retrieve a specific designation by ID"
+---
+
+Retrieve detailed information about a specific designation using its unique identifier. This endpoint requires Super Admin or HR Manager role.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the designation (UUID)
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The designation object
+  
+  <Expandable title="Designation Object">
+    <ResponseField name="id" type="string">
+      Unique identifier of the designation
+    </ResponseField>
+    
+    <ResponseField name="company_id" type="string">
+      The company ID this designation belongs to
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      The name of the designation
+    </ResponseField>
+    
+    <ResponseField name="description" type="string">
+      Description of the designation
+    </ResponseField>
+    
+    <ResponseField name="level_id" type="string">
+      UUID of the associated level (nullable)
+    </ResponseField>
+    
+    <ResponseField name="department_id" type="string">
+      UUID of the associated department (nullable)
+    </ResponseField>
+    
+    <ResponseField name="status" type="string">
+      Status of the designation (active/inactive)
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      Timestamp when the designation was created
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string">
+      Timestamp when the designation was last updated
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash
+GET /designations/123e4567-e89b-12d3-a456-426614174000
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "company_id": "789e4567-e89b-12d3-a456-426614174000",
+    "name": "Senior Software Engineer",
+    "description": "Senior level software engineering position",
+    "level_id": "550e8400-e29b-41d4-a716-446655440000",
+    "department_id": "660e8400-e29b-41d4-a716-446655440000",
+    "status": "active",
+    "created_at": "2026-03-03T10:00:00Z",
+    "updated_at": "2026-03-03T10:00:00Z"
+  }
+}
+```
+</ResponseExample>

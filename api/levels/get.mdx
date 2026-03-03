@@ -1,0 +1,120 @@
+---
+title: "Get Level"
+api: "GET /levels/{id}"
+description: "Retrieve a specific organizational level by ID"
+---
+
+## Authorization
+
+Requires authentication with a Bearer token. Only users with the following roles can retrieve levels:
+- Super Admin
+- HR Manager
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the level (UUID format)
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The level object
+  
+  <Expandable title="Level Response">
+    <ResponseField name="id" type="string">
+      Unique identifier for the level
+    </ResponseField>
+    
+    <ResponseField name="company_id" type="string">
+      The company this level belongs to
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Name of the level
+    </ResponseField>
+    
+    <ResponseField name="hierarchy_level" type="integer">
+      Hierarchy level number
+    </ResponseField>
+    
+    <ResponseField name="min_salary" type="number">
+      Minimum salary for this level
+    </ResponseField>
+    
+    <ResponseField name="max_salary" type="number">
+      Maximum salary for this level
+    </ResponseField>
+    
+    <ResponseField name="description" type="string">
+      Description of the level
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      Timestamp when the level was created
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string">
+      Timestamp when the level was last updated
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash
+curl -X GET "https://api.companyflow.com/levels/550e8400-e29b-41d4-a716-446655440000" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "company_id": "123e4567-e89b-12d3-a456-426614174000",
+    "name": "Senior Engineer",
+    "hierarchy_level": 3,
+    "min_salary": 80000,
+    "max_salary": 120000,
+    "description": "Senior level individual contributor",
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+<ResponseExample>
+```json 400 Bad Request
+{
+  "success": false,
+  "message": "invalid level id"
+}
+```
+</ResponseExample>
+
+<ResponseExample>
+```json 401 Unauthorized
+{
+  "success": false,
+  "message": "unauthorized"
+}
+```
+</ResponseExample>
+
+<ResponseExample>
+```json 500 Internal Server Error
+{
+  "success": false,
+  "message": "internal server error"
+}
+```
+</ResponseExample>

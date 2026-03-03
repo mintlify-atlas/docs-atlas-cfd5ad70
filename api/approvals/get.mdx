@@ -1,0 +1,186 @@
+---
+title: "Get Approval History"
+api: "GET /approval-history"
+description: "Retrieve approval history for a leave request or memo"
+---
+
+## Overview
+
+Retrieve the complete approval history for a specific entity (leave request or memo). This shows all approval actions taken, including who approved/rejected, when, and any comments provided.
+
+<Note>
+  Accessible to users with **Super Admin**, **HR Manager**, **Manager**, or **Employee** roles.
+</Note>
+
+## Query Parameters
+
+<ParamField query="entityType" type="string" required>
+  Type of entity to get approval history for. Must be one of:
+  - `leave_request` - For leave request approvals
+  - `memo` - For memo approvals
+</ParamField>
+
+<ParamField query="entityId" type="uuid" required>
+  The unique identifier of the entity (leave request ID or memo ID)
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of approval history entries, ordered chronologically
+  
+  <Expandable title="ApprovalHistory properties">
+    <ResponseField name="id" type="uuid">
+      Unique identifier for this history entry
+    </ResponseField>
+    
+    <ResponseField name="entityType" type="string">
+      Type of entity: `leave_request` or `memo`
+    </ResponseField>
+    
+    <ResponseField name="entityId" type="uuid">
+      ID of the entity this approval is for
+    </ResponseField>
+    
+    <ResponseField name="stepNumber" type="integer">
+      The workflow step number (1, 2, 3, etc.)
+    </ResponseField>
+    
+    <ResponseField name="approverId" type="uuid">
+      ID of the employee who took the action
+    </ResponseField>
+    
+    <ResponseField name="action" type="string">
+      Action taken by the approver:
+      - `approved` - Approved and moved to next step
+      - `rejected` - Rejected the request
+      - `requested_changes` - Requested changes from submitter
+    </ResponseField>
+    
+    <ResponseField name="comments" type="string">
+      Optional comments provided by the approver
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="timestamp">
+      When the action was taken
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Requests
+
+### Get approval history for a leave request
+
+```bash
+curl -X GET "https://api.companyflow.com/approval-history?entityType=leave_request&entityId=123e4567-e89b-12d3-a456-426614174000" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Get approval history for a memo
+
+```bash
+curl -X GET "https://api.companyflow.com/approval-history?entityType=memo&entityId=456e4567-e89b-12d3-a456-426614174000" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "aaa14567-e89b-12d3-a456-426614174000",
+      "entityType": "leave_request",
+      "entityId": "123e4567-e89b-12d3-a456-426614174000",
+      "stepNumber": 1,
+      "approverId": "789e4567-e89b-12d3-a456-426614174000",
+      "action": "approved",
+      "comments": "Approved for the requested dates",
+      "createdAt": "2026-03-03T09:15:00Z"
+    },
+    {
+      "id": "bbb14567-e89b-12d3-a456-426614174000",
+      "entityType": "leave_request",
+      "entityId": "123e4567-e89b-12d3-a456-426614174000",
+      "stepNumber": 2,
+      "approverId": "999e4567-e89b-12d3-a456-426614174000",
+      "action": "approved",
+      "comments": "Final approval granted",
+      "createdAt": "2026-03-03T11:30:00Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Understanding Approval Actions
+
+<CardGroup cols={3}>
+  <Card title="Approved" icon="check" color="#10b981">
+    The approver accepted the request and advanced it to the next step in the workflow. If this was the final step, the request is fully approved.
+  </Card>
+  
+  <Card title="Rejected" icon="xmark" color="#ef4444">
+    The approver denied the request. This typically ends the approval process and the request status becomes "rejected".
+  </Card>
+  
+  <Card title="Requested Changes" icon="pen" color="#f59e0b">
+    The approver asked for modifications before they can approve. The submitter needs to update the request.
+  </Card>
+</CardGroup>
+
+## Workflow Step Tracking
+
+The `stepNumber` field corresponds to the steps defined in the approval workflow:
+
+<Steps>
+  <Step title="Step 1">
+    First approver in the workflow (e.g., direct manager)
+  </Step>
+  
+  <Step title="Step 2">
+    Second approver if multi-step workflow (e.g., department head)
+  </Step>
+  
+  <Step title="Step 3+">
+    Additional steps as defined in the workflow (e.g., HR manager, finance)
+  </Step>
+</Steps>
+
+<Info>
+  The approval history shows all actions taken, even if a request was rejected at step 1. This provides a complete audit trail of the approval process.
+</Info>
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Audit Trail">
+    Use approval history to maintain compliance records showing who approved what and when. The `comments` field provides context for each decision.
+  </Accordion>
+  
+  <Accordion title="Status Tracking">
+    Display approval progress to employees by showing which steps have been completed and who is the current pending approver.
+  </Accordion>
+  
+  <Accordion title="Analytics">
+    Analyze approval patterns, average approval times per step, and which approvers tend to reject or request changes most frequently.
+  </Accordion>
+</AccordionGroup>
+
+## Error Responses
+
+<ResponseField name="400 Bad Request">
+  Missing required parameters (`entityType` or `entityId`), or invalid `entityId` format
+</ResponseField>
+
+<ResponseField name="401 Unauthorized">
+  Missing or invalid authentication token
+</ResponseField>
+
+<ResponseField name="500 Internal Server Error">
+  Server error while retrieving approval history
+</ResponseField>

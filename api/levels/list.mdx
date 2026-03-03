@@ -1,0 +1,175 @@
+---
+title: "List Levels"
+api: "GET /companies/{company_id}/levels"
+description: "Get a paginated list of organizational levels for a company"
+---
+
+## Authorization
+
+Requires authentication with a Bearer token. Only users with the following roles can list levels:
+- Super Admin
+- HR Manager
+
+## Path Parameters
+
+<ParamField path="company_id" type="string" required>
+  The unique identifier of the company
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="page_size" type="integer" default="10">
+  Number of items per page
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search by level name or code
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Paginated list of levels
+  
+  <Expandable title="Pagination Response">
+    <ResponseField name="items" type="array">
+      Array of level objects
+      
+      <Expandable title="Level Object">
+        <ResponseField name="id" type="string">
+          Unique identifier for the level
+        </ResponseField>
+        
+        <ResponseField name="company_id" type="string">
+          The company this level belongs to
+        </ResponseField>
+        
+        <ResponseField name="name" type="string">
+          Name of the level
+        </ResponseField>
+        
+        <ResponseField name="hierarchy_level" type="integer">
+          Hierarchy level number
+        </ResponseField>
+        
+        <ResponseField name="min_salary" type="number">
+          Minimum salary for this level
+        </ResponseField>
+        
+        <ResponseField name="max_salary" type="number">
+          Maximum salary for this level
+        </ResponseField>
+        
+        <ResponseField name="description" type="string">
+          Description of the level
+        </ResponseField>
+        
+        <ResponseField name="created_at" type="string">
+          Timestamp when the level was created
+        </ResponseField>
+        
+        <ResponseField name="updated_at" type="string">
+          Timestamp when the level was last updated
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="total" type="integer">
+      Total number of items
+    </ResponseField>
+    
+    <ResponseField name="page" type="integer">
+      Current page number
+    </ResponseField>
+    
+    <ResponseField name="page_size" type="integer">
+      Number of items per page
+    </ResponseField>
+    
+    <ResponseField name="total_pages" type="integer">
+      Total number of pages
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash
+curl -X GET "https://api.companyflow.com/companies/123e4567-e89b-12d3-a456-426614174000/levels?page=1&page_size=10&search=engineer" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "company_id": "123e4567-e89b-12d3-a456-426614174000",
+        "name": "Junior Engineer",
+        "hierarchy_level": 1,
+        "min_salary": 50000,
+        "max_salary": 70000,
+        "description": "Entry level engineer",
+        "created_at": "2024-01-15T10:30:00Z",
+        "updated_at": "2024-01-15T10:30:00Z"
+      },
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440001",
+        "company_id": "123e4567-e89b-12d3-a456-426614174000",
+        "name": "Senior Engineer",
+        "hierarchy_level": 3,
+        "min_salary": 80000,
+        "max_salary": 120000,
+        "description": "Senior level individual contributor",
+        "created_at": "2024-01-15T10:31:00Z",
+        "updated_at": "2024-01-15T10:31:00Z"
+      }
+    ],
+    "total": 2,
+    "page": 1,
+    "page_size": 10,
+    "total_pages": 1
+  }
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+<ResponseExample>
+```json 400 Bad Request
+{
+  "success": false,
+  "message": "invalid company_id"
+}
+```
+</ResponseExample>
+
+<ResponseExample>
+```json 401 Unauthorized
+{
+  "success": false,
+  "message": "unauthorized"
+}
+```
+</ResponseExample>
+
+<ResponseExample>
+```json 500 Internal Server Error
+{
+  "success": false,
+  "message": "internal server error"
+}
+```
+</ResponseExample>

@@ -1,0 +1,197 @@
+---
+title: "List Approval Workflows"
+api: "GET /approval-workflows"
+description: "Retrieve approval workflows for your company with optional filtering"
+---
+
+## Overview
+
+Retrieve all approval workflows configured for your company. You can filter by workflow type, department, and active status.
+
+<Note>
+  Accessible to users with **Super Admin**, **HR Manager**, or **Manager** roles.
+</Note>
+
+## Query Parameters
+
+<ParamField query="workflowType" type="string">
+  Filter by workflow type. Valid values:
+  - `leave` - Leave request workflows
+  - `memo` - Memo approval workflows
+  - `expense` - Expense claim workflows
+  
+  If not provided, returns workflows of all types.
+</ParamField>
+
+<ParamField query="departmentId" type="uuid">
+  Filter workflows by department ID. Returns workflows specific to this department plus company-wide workflows (where `departmentId` is null).
+</ParamField>
+
+<ParamField query="onlyActive" type="boolean" default="true">
+  When `true`, returns only active workflows. Set to `false` to include inactive workflows.
+  
+  Default is `true` if not specified.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of approval workflow objects
+  
+  <Expandable title="ApprovalWorkflow properties">
+    <ResponseField name="id" type="uuid">
+      Unique identifier for the workflow
+    </ResponseField>
+    
+    <ResponseField name="companyId" type="uuid">
+      Company ID this workflow belongs to
+    </ResponseField>
+    
+    <ResponseField name="workflowType" type="string">
+      Type of workflow: `leave`, `memo`, or `expense`
+    </ResponseField>
+    
+    <ResponseField name="departmentId" type="uuid">
+      Department ID if department-specific, null if company-wide
+    </ResponseField>
+    
+    <ResponseField name="steps" type="array">
+      Array of approval steps in sequential order. Each step contains:
+      - `step` (integer): Step sequence number
+      - `role_id` (uuid): Required role for approval
+      - `approver_id` (uuid): Specific approver if set, null otherwise
+    </ResponseField>
+    
+    <ResponseField name="isActive" type="boolean">
+      Whether this workflow is currently active
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="timestamp">
+      When the workflow was created
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Requests
+
+### Get all active workflows
+
+```bash
+curl -X GET https://api.companyflow.com/approval-workflows \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Get leave workflows only
+
+```bash
+curl -X GET "https://api.companyflow.com/approval-workflows?workflowType=leave" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Get workflows for a specific department
+
+```bash
+curl -X GET "https://api.companyflow.com/approval-workflows?departmentId=123e4567-e89b-12d3-a456-426614174000" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Include inactive workflows
+
+```bash
+curl -X GET "https://api.companyflow.com/approval-workflows?onlyActive=false" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "987e4567-e89b-12d3-a456-426614174000",
+      "companyId": "111e4567-e89b-12d3-a456-426614174000",
+      "workflowType": "leave",
+      "departmentId": "123e4567-e89b-12d3-a456-426614174000",
+      "steps": [
+        {
+          "step": 1,
+          "role_id": "456e4567-e89b-12d3-a456-426614174000",
+          "approver_id": null
+        },
+        {
+          "step": 2,
+          "role_id": "789e4567-e89b-12d3-a456-426614174000"
+        }
+      ],
+      "isActive": true,
+      "createdAt": "2026-03-03T10:30:00Z"
+    },
+    {
+      "id": "654e4567-e89b-12d3-a456-426614174000",
+      "companyId": "111e4567-e89b-12d3-a456-426614174000",
+      "workflowType": "memo",
+      "departmentId": null,
+      "steps": [
+        {
+          "step": 1,
+          "role_id": "456e4567-e89b-12d3-a456-426614174000",
+          "approver_id": "999e4567-e89b-12d3-a456-426614174000"
+        }
+      ],
+      "isActive": true,
+      "createdAt": "2026-02-28T14:20:00Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Understanding Workflow Scope
+
+<CardGroup cols={2}>
+  <Card title="Company-Wide Workflows" icon="building">
+    Workflows with `departmentId: null` apply to all departments in the company. These are used when there's no department-specific workflow configured.
+  </Card>
+  
+  <Card title="Department-Specific Workflows" icon="users">
+    Workflows with a specific `departmentId` take precedence over company-wide workflows for that department. Use these when different departments need different approval processes.
+  </Card>
+</CardGroup>
+
+## Filtering Logic
+
+<Steps>
+  <Step title="Company Filter">
+    Results are automatically filtered to the authenticated user's company based on the JWT token.
+  </Step>
+  
+  <Step title="Workflow Type Filter">
+    If `workflowType` is provided, only workflows of that type are returned.
+  </Step>
+  
+  <Step title="Department Filter">
+    If `departmentId` is provided, returns both department-specific workflows and company-wide workflows (null departmentId).
+  </Step>
+  
+  <Step title="Active Status Filter">
+    By default, only active workflows are returned unless `onlyActive=false` is specified.
+  </Step>
+</Steps>
+
+## Error Responses
+
+<ResponseField name="400 Bad Request">
+  Invalid query parameters (e.g., malformed UUID for departmentId)
+</ResponseField>
+
+<ResponseField name="401 Unauthorized">
+  Missing or invalid authentication token, or insufficient permissions
+</ResponseField>
+
+<ResponseField name="500 Internal Server Error">
+  Server error while retrieving workflows
+</ResponseField>

@@ -1,0 +1,230 @@
+---
+title: 'Database Setup'
+description: 'Configure PostgreSQL for CompanyFlow API'
+---
+
+## Overview
+
+CompanyFlow uses PostgreSQL 14 or higher as its primary database. The application uses the `pgx/v5` driver for database connectivity and includes a custom SQL-based migration runner.
+
+## Prerequisites
+
+Before setting up the database, ensure you have:
+
+- PostgreSQL 14 or higher installed
+- Database user with appropriate privileges
+- Network access to the PostgreSQL server
+
+## Installation
+
+<Steps>
+  <Step title="Install PostgreSQL">
+    Install PostgreSQL on your system:
+
+    <CodeGroup>
+      ```bash macOS (Homebrew)
+      brew install postgresql@14
+      brew services start postgresql@14
+      ```
+
+      ```bash Ubuntu/Debian
+      sudo apt update
+      sudo apt install postgresql-14 postgresql-contrib
+      sudo systemctl start postgresql
+      ```
+
+      ```bash Windows
+      # Download from https://www.postgresql.org/download/windows/
+      # Or use Chocolatey:
+      choco install postgresql14
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Create Database">
+    Create a new database for CompanyFlow:
+
+    ```bash
+    # Connect to PostgreSQL
+    psql -U postgres
+    
+    # Create database
+    CREATE DATABASE companyflow;
+    
+    # Create user (optional)
+    CREATE USER companyflow_user WITH PASSWORD 'your_secure_password';
+    
+    # Grant privileges
+    GRANT ALL PRIVILEGES ON DATABASE companyflow TO companyflow_user;
+    
+    # Exit psql
+    \q
+    ```
+
+    <Note>
+      For production environments, use a strong password and limit privileges to only what's necessary.
+    </Note>
+  </Step>
+
+  <Step title="Enable Required Extensions">
+    CompanyFlow requires the `pgcrypto` extension for UUID generation:
+
+    ```sql
+    -- Connect to your database
+    psql -U postgres -d companyflow
+    
+    -- Enable extension
+    CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+    ```
+
+    <Note>
+      This extension is automatically enabled when you run migrations, but you can enable it manually if needed.
+    </Note>
+  </Step>
+
+  <Step title="Verify Connection">
+    Test your database connection:
+
+    ```bash
+    psql -U companyflow_user -d companyflow -h localhost -p 5432
+    ```
+
+    If successful, you should see the PostgreSQL prompt.
+  </Step>
+</Steps>
+
+## Database Configuration
+
+### Connection String Format
+
+CompanyFlow uses the following connection string format:
+
+```
+postgresql://[user]:[password]@[host]:[port]/[dbname]?sslmode=[mode]
+```
+
+### SSL Mode Options
+
+<ParamField path="sslmode" type="string" default="disable">
+  Controls SSL/TLS encryption for the database connection:
+
+  - `disable` - No SSL (development only)
+  - `require` - SSL required, no certificate verification
+  - `verify-ca` - SSL required, verify CA certificate
+  - `verify-full` - SSL required, verify CA and hostname
+</ParamField>
+
+<Warning>
+  Always use `sslmode=require` or higher in production environments to encrypt database traffic.
+</Warning>
+
+## Connection Pooling
+
+CompanyFlow uses `pgxpool` for connection pooling. The default pool settings are managed by the `pgx` library, which typically creates:
+
+- Maximum connections: Based on system resources
+- Minimum connections: 0 (connections created on demand)
+- Connection lifetime: Automatic cleanup of idle connections
+
+### Custom Pool Configuration
+
+To customize connection pool settings, you can modify the connection string in `config/config.go:27`:
+
+```go
+connStr := fmt.Sprintf(
+    "postgresql://%s:%s@%s:%s/%s?sslmode=%s&pool_max_conns=20&pool_min_conns=5",
+    user, password, host, port, dbname, sslmode,
+)
+```
+
+## Schema Overview
+
+The CompanyFlow database includes the following main tables:
+
+- **companies** - Multi-tenant company records
+- **tenants** - Subscription and plan information
+- **employees** - Employee records with authentication
+- **departments** - Organizational departments
+- **designations** - Job titles and positions
+- **levels** - Employee hierarchy levels
+- **roles** - RBAC roles
+- **permissions** - Role-based permissions
+- **leaves** - Leave request records
+- **memos** - Internal communications
+- **approvals** - Approval workflow records
+- **audit_logs** - System activity tracking
+- **schema_migrations** - Migration tracking table
+
+## Testing Database Setup
+
+### Create Test Database
+
+For running tests, create a separate test database:
+
+```bash
+psql -U postgres
+CREATE DATABASE companyflow_test;
+GRANT ALL PRIVILEGES ON DATABASE companyflow_test TO companyflow_user;
+```
+
+### Configure Test Environment
+
+Set test database variables in your environment or `.env` file:
+
+```env
+TEST_DB_HOST=localhost
+TEST_DB_PORT=5432
+TEST_DB_USER=companyflow_user
+TEST_DB_PASSWORD=your_password
+TEST_DB_NAME=companyflow_test
+TEST_DB_SSLMODE=disable
+```
+
+## Troubleshooting
+
+### Connection Refused
+
+If you see "connection refused" errors:
+
+1. Check if PostgreSQL is running:
+   ```bash
+   # macOS/Linux
+   pg_isready -h localhost -p 5432
+   
+   # Check service status
+   sudo systemctl status postgresql
+   ```
+
+2. Verify PostgreSQL is listening on the correct port:
+   ```bash
+   sudo netstat -plunt | grep postgres
+   ```
+
+### Authentication Failed
+
+If authentication fails:
+
+1. Check `pg_hba.conf` configuration file
+2. Ensure password authentication is enabled for your connection type
+3. Verify username and password are correct
+
+### Permission Denied
+
+If you see permission errors:
+
+```sql
+-- Grant all privileges on database
+GRANT ALL PRIVILEGES ON DATABASE companyflow TO companyflow_user;
+
+-- Grant schema privileges
+GRANT ALL ON SCHEMA public TO companyflow_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO companyflow_user;
+```
+
+## Next Steps
+
+After setting up your database:
+
+1. [Configure environment variables](/guides/environment-configuration)
+2. [Run database migrations](/guides/running-migrations)
+3. [Test your API setup](/guides/testing)

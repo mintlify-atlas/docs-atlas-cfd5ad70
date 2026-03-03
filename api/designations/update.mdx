@@ -1,0 +1,116 @@
+---
+title: "Update Designation"
+api: "PUT /designations/{id}"
+description: "Update an existing designation"
+---
+
+Update an existing designation by its unique identifier. All fields are optional and only provided fields will be updated. This endpoint requires Super Admin or HR Manager role.
+
+<Note>
+  This endpoint supports both `PUT` and `PATCH` methods.
+</Note>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the designation (UUID)
+</ParamField>
+
+## Request Body
+
+<ParamField body="name" type="string">
+  The name of the designation (2-255 characters)
+</ParamField>
+
+<ParamField body="description" type="string">
+  A description of the designation
+</ParamField>
+
+<ParamField body="level_id" type="string">
+  UUID of the associated level
+</ParamField>
+
+<ParamField body="department_id" type="string">
+  UUID of the associated department
+</ParamField>
+
+<ParamField body="status" type="string">
+  Status of the designation. Must be either `active` or `inactive`
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The updated designation object
+  
+  <Expandable title="Designation Object">
+    <ResponseField name="id" type="string">
+      Unique identifier of the designation
+    </ResponseField>
+    
+    <ResponseField name="company_id" type="string">
+      The company ID this designation belongs to
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      The name of the designation
+    </ResponseField>
+    
+    <ResponseField name="description" type="string">
+      Description of the designation
+    </ResponseField>
+    
+    <ResponseField name="level_id" type="string">
+      UUID of the associated level (nullable)
+    </ResponseField>
+    
+    <ResponseField name="department_id" type="string">
+      UUID of the associated department (nullable)
+    </ResponseField>
+    
+    <ResponseField name="status" type="string">
+      Status of the designation (active/inactive)
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      Timestamp when the designation was created
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string">
+      Timestamp when the designation was last updated
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```json
+{
+  "name": "Lead Software Engineer",
+  "description": "Lead level software engineering position with team management responsibilities",
+  "status": "active"
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "company_id": "789e4567-e89b-12d3-a456-426614174000",
+    "name": "Lead Software Engineer",
+    "description": "Lead level software engineering position with team management responsibilities",
+    "level_id": "550e8400-e29b-41d4-a716-446655440000",
+    "department_id": "660e8400-e29b-41d4-a716-446655440000",
+    "status": "active",
+    "created_at": "2026-03-03T10:00:00Z",
+    "updated_at": "2026-03-03T11:30:00Z"
+  }
+}
+```
+</ResponseExample>

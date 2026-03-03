@@ -1,0 +1,76 @@
+---
+title: "Delete Level"
+api: "DELETE /levels/{id}"
+description: "Delete an organizational level by ID"
+---
+
+## Authorization
+
+Requires authentication with a Bearer token. Only users with the following roles can delete levels:
+- Super Admin
+- HR Manager
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the level (UUID format)
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message
+</ResponseField>
+
+<RequestExample>
+```bash
+curl -X DELETE "https://api.companyflow.com/levels/550e8400-e29b-41d4-a716-446655440000" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "message": "level deleted"
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+<ResponseExample>
+```json 400 Bad Request
+{
+  "success": false,
+  "message": "invalid level id"
+}
+```
+</ResponseExample>
+
+<ResponseExample>
+```json 401 Unauthorized
+{
+  "success": false,
+  "message": "unauthorized"
+}
+```
+</ResponseExample>
+
+<ResponseExample>
+```json 500 Internal Server Error
+{
+  "success": false,
+  "message": "internal server error"
+}
+```
+</ResponseExample>
+
+<Warning>
+  Deleting a level is a permanent action and cannot be undone. Ensure that no employees are currently assigned to this level before deletion.
+</Warning>

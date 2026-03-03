@@ -1,0 +1,79 @@
+---
+title: "Delete Employee"
+api: "DELETE /employees/{id}"
+description: "Delete an employee (soft delete by default, or hard delete with query parameter)"
+---
+
+## Authentication
+
+This endpoint requires Bearer token authentication with one of the following roles:
+- `super_admin`
+- `hr_manager`
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the employee (UUID format)
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="hard_delete" type="boolean" default="false">
+  If set to `true`, permanently deletes the employee. Otherwise performs a soft delete.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message
+</ResponseField>
+
+<RequestExample>
+
+```bash Soft Delete
+curl -X DELETE https://api.companyflow.com/employees/emp-uuid-here \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash Hard Delete
+curl -X DELETE "https://api.companyflow.com/employees/emp-uuid-here?hard_delete=true" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200 Success
+{
+  "success": true,
+  "message": "employee deleted"
+}
+```
+
+```json 400 Bad Request
+{
+  "success": false,
+  "message": "invalid employee id"
+}
+```
+
+```json 401 Unauthorized
+{
+  "success": false,
+  "message": "insufficient role"
+}
+```
+
+```json 500 Internal Server Error
+{
+  "success": false,
+  "message": "employee not found"
+}
+```
+
+</ResponseExample>

@@ -1,0 +1,175 @@
+---
+title: 'List Departments'
+api: 'GET /companies/{company_id}/departments'
+description: 'Retrieve a paginated list of departments for a company'
+---
+
+## Authentication
+
+This endpoint requires authentication with a Bearer token. Only users with **Super Admin** or **HR Manager** roles can list departments.
+
+<ParamField path="company_id" type="string" required>
+  The unique identifier of the company
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="page_size" type="integer" default="10">
+  Number of items per page
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by department status. Must be one of: `active`, `inactive`
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search departments by name or code
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Paginated department list
+  
+  <Expandable title="Pagination Response">
+    <ResponseField name="items" type="array">
+      Array of department objects
+      
+      <Expandable title="Department Object">
+        <ResponseField name="id" type="string">
+          Unique department identifier
+        </ResponseField>
+        
+        <ResponseField name="company_id" type="string">
+          Company identifier
+        </ResponseField>
+        
+        <ResponseField name="name" type="string">
+          Department name
+        </ResponseField>
+        
+        <ResponseField name="code" type="string">
+          Department code
+        </ResponseField>
+        
+        <ResponseField name="description" type="string">
+          Department description
+        </ResponseField>
+        
+        <ResponseField name="parent_department_id" type="string" nullable>
+          Parent department ID if hierarchical
+        </ResponseField>
+        
+        <ResponseField name="cost_center" type="string">
+          Cost center identifier
+        </ResponseField>
+        
+        <ResponseField name="status" type="string">
+          Department status (active/inactive)
+        </ResponseField>
+        
+        <ResponseField name="created_at" type="string">
+          ISO 8601 timestamp of creation
+        </ResponseField>
+        
+        <ResponseField name="updated_at" type="string">
+          ISO 8601 timestamp of last update
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="total" type="integer">
+      Total number of departments matching the query
+    </ResponseField>
+    
+    <ResponseField name="page" type="integer">
+      Current page number
+    </ResponseField>
+    
+    <ResponseField name="page_size" type="integer">
+      Number of items per page
+    </ResponseField>
+    
+    <ResponseField name="total_pages" type="integer">
+      Total number of pages
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET "https://api.companyflow.com/companies/{company_id}/departments?page=1&page_size=10&status=active" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```bash With Search
+curl -X GET "https://api.companyflow.com/companies/{company_id}/departments?search=engineering" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200 - Success
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "123e4567-e89b-12d3-a456-426614174000",
+        "company_id": "987fcdeb-51a2-43f7-9c5d-123456789abc",
+        "name": "Engineering",
+        "code": "ENG",
+        "description": "Software engineering and development",
+        "parent_department_id": null,
+        "cost_center": "CC-100",
+        "status": "active",
+        "created_at": "2026-03-03T10:00:00Z",
+        "updated_at": "2026-03-03T10:00:00Z"
+      },
+      {
+        "id": "234e5678-e89b-12d3-a456-426614174001",
+        "company_id": "987fcdeb-51a2-43f7-9c5d-123456789abc",
+        "name": "Human Resources",
+        "code": "HR",
+        "description": "Human resources management",
+        "parent_department_id": null,
+        "cost_center": "CC-200",
+        "status": "active",
+        "created_at": "2026-03-03T11:00:00Z",
+        "updated_at": "2026-03-03T11:00:00Z"
+      }
+    ],
+    "total": 2,
+    "page": 1,
+    "page_size": 10,
+    "total_pages": 1
+  }
+}
+```
+
+```json 400 - Bad Request
+{
+  "success": false,
+  "message": "invalid page"
+}
+```
+
+```json 401 - Unauthorized
+{
+  "success": false,
+  "message": "missing authorization header"
+}
+```
+
+</ResponseExample>

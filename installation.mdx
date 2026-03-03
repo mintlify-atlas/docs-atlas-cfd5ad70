@@ -1,0 +1,320 @@
+---
+title: Installation
+description: Set up CompanyFlow API on your local machine or server
+---
+
+This guide will help you install and configure CompanyFlow on your development machine or production server.
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+<CardGroup cols={3}>
+  <Card title="Go 1.24+" icon="golang">
+    Download from [golang.org](https://golang.org/dl/)
+  </Card>
+  <Card title="PostgreSQL 14+" icon="database">
+    Download from [postgresql.org](https://www.postgresql.org/download/)
+  </Card>
+  <Card title="Git" icon="git">
+    Download from [git-scm.com](https://git-scm.com/downloads)
+  </Card>
+</CardGroup>
+
+<Note>
+  CompanyFlow requires Go version 1.24.0 or higher and PostgreSQL version 14 or higher.
+</Note>
+
+## Installation Steps
+
+<Steps>
+  <Step title="Clone the Repository">
+    Clone the CompanyFlow repository from GitHub:
+
+    ```bash
+    git clone https://github.com/falasefemi2/companyflowlow.git
+    cd companyflowlow
+    ```
+  </Step>
+
+  <Step title="Install Dependencies">
+    Download all required Go modules:
+
+    ```bash
+    go mod download
+    ```
+
+    This will install all dependencies including:
+    - `github.com/gorilla/mux` - HTTP router
+    - `github.com/jackc/pgx/v5` - PostgreSQL driver
+    - `github.com/golang-jwt/jwt/v5` - JWT authentication
+    - `github.com/swaggo/swag` - Swagger documentation
+    - `golang.org/x/crypto` - Password hashing
+  </Step>
+
+  <Step title="Configure PostgreSQL Database">
+    Create a new PostgreSQL database for CompanyFlow:
+
+    ```sql
+    CREATE DATABASE companyflow;
+    ```
+
+    <Tip>
+      You can use any database name you prefer. Just make sure to update the `DB_NAME` in your environment configuration.
+    </Tip>
+  </Step>
+
+  <Step title="Set Up Environment Variables">
+    Create a `.env` file in the root directory with the following configuration:
+
+    ```bash
+    # Database Configuration
+    DB_HOST=localhost
+    DB_PORT=5432
+    DB_USER=your_postgres_user
+    DB_PASSWORD=your_postgres_password
+    DB_NAME=companyflow
+    DB_SSLMODE=disable
+
+    # Server Configuration
+    PORT=8080
+
+    # CORS Configuration
+    CORS_ORIGIN=http://localhost:3000
+
+    # JWT Configuration
+    JWT_SECRET=your_secure_jwt_secret_key_here
+    ```
+
+    <Warning>
+      **Security Best Practices:**
+      - Use a strong, randomly generated JWT secret (minimum 32 characters)
+      - Never commit the `.env` file to version control
+      - In production, use environment variables instead of a `.env` file
+      - Enable SSL mode (`DB_SSLMODE=require`) in production
+    </Warning>
+
+    ### Environment Variables Reference
+
+    | Variable | Description | Required | Default |
+    |----------|-------------|----------|----------|
+    | `DB_HOST` | PostgreSQL host address | Yes | - |
+    | `DB_PORT` | PostgreSQL port | Yes | - |
+    | `DB_USER` | Database username | Yes | - |
+    | `DB_PASSWORD` | Database password | Yes | - |
+    | `DB_NAME` | Database name | Yes | - |
+    | `DB_SSLMODE` | SSL mode (disable/require/verify-full) | Yes | - |
+    | `PORT` | Server port | No | 8080 |
+    | `CORS_ORIGIN` | Allowed CORS origin | No | http://localhost:3000 |
+    | `JWT_SECRET` | Secret key for JWT signing | Yes | - |
+  </Step>
+
+  <Step title="Run the Application">
+    Start the CompanyFlow server:
+
+    ```bash
+    go run main.go
+    ```
+
+    On startup, CompanyFlow will:
+    1. Connect to the PostgreSQL database
+    2. Automatically run database migrations
+    3. Start the HTTP server
+
+    You should see output similar to:
+
+    ```
+    connecting to database
+    ✓ Database connected successfully
+    Running migrations...
+    ✓ Server starting on :8080
+    Press Ctrl+C to stop the server
+    ```
+  </Step>
+
+  <Step title="Verify Installation">
+    Test that the server is running correctly:
+
+    ```bash
+    curl http://localhost:8080/health
+    ```
+
+    You should receive an `ok` response.
+
+    Then open your browser and navigate to the Swagger documentation:
+
+    ```
+    http://localhost:8080/swagger/index.html
+    ```
+  </Step>
+</Steps>
+
+## Database Migrations
+
+CompanyFlow uses an automatic migration system that runs on startup.
+
+### How Migrations Work
+
+- Migration files are stored in `database/migration/` as SQL files
+- Files are executed in alphabetical order based on their prefix (`000_`, `001_`, etc.)
+- The system tracks executed migrations in a `schema_migrations` table
+- Each migration runs only once, even if you restart the server
+
+<Note>
+  Migrations are automatically executed when you run `go run main.go`. You don't need to run them manually.
+</Note>
+
+### Migration File Structure
+
+Migration files follow this naming pattern:
+
+```
+000_create_companies_table.sql
+001_create_employees_table.sql
+002_create_departments_table.sql
+```
+
+## Building for Production
+
+To build a production-ready binary:
+
+```bash
+go build -o companyflow main.go
+```
+
+This creates an executable binary called `companyflow` that you can deploy to your server.
+
+### Running the Production Binary
+
+```bash
+# Set environment variables
+export DB_HOST=your-production-db-host
+export DB_PORT=5432
+export DB_USER=your-db-user
+export DB_PASSWORD=your-db-password
+export DB_NAME=companyflow
+export DB_SSLMODE=require
+export PORT=8080
+export JWT_SECRET=your-production-jwt-secret
+export CORS_ORIGIN=https://your-frontend-domain.com
+
+# Run the binary
+./companyflow
+```
+
+<Warning>
+  **Production Checklist:**
+  - Use `DB_SSLMODE=require` for encrypted database connections
+  - Set a strong, unique JWT secret
+  - Configure CORS_ORIGIN to match your frontend domain
+  - Use environment variables, not a `.env` file
+  - Run behind a reverse proxy (nginx, Caddy, etc.)
+  - Set up monitoring and logging
+</Warning>
+
+## Running Tests
+
+CompanyFlow includes a comprehensive test suite. To run tests:
+
+```bash
+# Run all tests
+go test ./...
+
+# Run tests with verbose output
+go test -v ./...
+
+# Run tests for a specific package
+go test ./repositories/...
+
+# Run tests with coverage
+go test -cover ./...
+```
+
+### Test Database Configuration
+
+For running tests, configure a separate test database using the `TEST_DATABASE_URL` environment variable or use the same `DB_*` variables with a different database name.
+
+## Docker Installation (Optional)
+
+If you prefer using Docker, you can run PostgreSQL in a container:
+
+```bash
+# Start PostgreSQL in Docker
+docker run -d \
+  --name companyflow-db \
+  -e POSTGRES_USER=companyflow \
+  -e POSTGRES_PASSWORD=companyflow \
+  -e POSTGRES_DB=companyflow \
+  -p 5432:5432 \
+  postgres:14
+
+# Update your .env file
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=companyflow
+DB_PASSWORD=companyflow
+DB_NAME=companyflow
+```
+
+## Troubleshooting
+
+### Connection Failed
+
+```
+Failed to initialize database: failed to ping database
+```
+
+**Solutions:**
+- Verify PostgreSQL is running: `systemctl status postgresql` (Linux) or check Activity Monitor (macOS)
+- Check database credentials in `.env` file
+- Ensure the database exists: `psql -l`
+- Verify PostgreSQL is accepting connections on the specified port
+
+### Migration Failed
+
+```
+Migration failed: pq: relation already exists
+```
+
+**Solutions:**
+- Drop and recreate the database for a clean slate
+- Check the `schema_migrations` table for inconsistencies
+- Ensure migration files are properly numbered
+
+### Port Already in Use
+
+```
+listen tcp :8080: bind: address already in use
+```
+
+**Solutions:**
+- Change the `PORT` in your `.env` file
+- Find and stop the process using port 8080: `lsof -ti:8080 | xargs kill -9`
+
+### Missing JWT Secret
+
+```
+Missing required environment variable: JWT_SECRET
+```
+
+**Solution:**
+- Add `JWT_SECRET` to your `.env` file with a secure random string
+
+## Next Steps
+
+Now that CompanyFlow is installed and running, you're ready to start using the API!
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Make your first API calls and learn the basics
+  </Card>
+  <Card title="API Reference" icon="book" href="/api/auth/login">
+    Explore all available endpoints and schemas
+  </Card>
+  <Card title="Authentication" icon="shield" href="/concepts/authentication">
+    Learn about JWT authentication and security
+  </Card>
+  <Card title="Multi-Tenant Setup" icon="building" href="/concepts/multi-tenancy">
+    Configure multiple companies in your instance
+  </Card>
+</CardGroup>

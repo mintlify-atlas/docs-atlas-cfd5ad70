@@ -1,0 +1,325 @@
+---
+title: 'Authentication'
+description: 'Learn how CompanyFlow uses JWT tokens to authenticate users and enforce tenant security'
+---
+
+## Overview
+
+CompanyFlow implements a **JWT (JSON Web Token)** authentication system that provides stateless, secure authentication for employees across the API. Each token contains user identity, role, and tenant information.
+
+## Authentication Flow
+
+### 1. Login Request
+
+Employees authenticate using their email and password:
+
+```bash
+POST /auth/login
+Content-Type: application/json
+
+{
+  "email": "john.doe@acme.com",
+  "password": "securepassword123"
+}
+```
+
+### 2. Credential Validation
+
+The authentication service performs the following checks:
+
+1. **User Lookup** - Find employee by email
+2. **Status Check** - Verify employee status is `active`
+3. **Password Verification** - Compare bcrypt hash
+4. **Token Generation** - Create JWT with claims
+
+```go /home/daytona/workspace/source/services/auth_service.go:42-62
+employee, roleName, err := as.employeeRepo.GetEmployeeWithRoleByEmail(ctx, req.Email)
+if err != nil {
+    return nil, ErrInvalidCredentials
+}
+
+if employee.Status != "active" {
+    return nil, ErrInvalidCredentials
+}
+
+if !utils.VerifyPassword(employee.PasswordHash, req.Password) {
+    return nil, ErrInvalidCredentials
+}
+
+token, err := utils.GenerateToken(
+    employee.ID.String(),
+    roleName,
+    employee.CompanyID.String(),
+    employee.Email,
+    employee.FirstName,
+    employee.LastName,
+    24,  // 24-hour expiry
+)
+```
+
+### 3. Login Response
+
+Successful authentication returns a JWT token along with user and company details:
+
+```json
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "role": "HR Manager",
+    "employee": {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john.doe@acme.com"
+    },
+    "company": {
+      "id": "660e8400-e29b-41d4-a716-446655440000",
+      "name": "Acme Corporation",
+      "slug": "acme"
+    }
+  }
+}
+```
+
+## JWT Token Structure
+
+### Token Claims
+
+Each JWT contains the following claims:
+
+```go /home/daytona/workspace/source/utils/utils.go:80-88
+type AuthClaims struct {
+    EmployeeID string `json:"employee_id"`  // Unique employee identifier
+    Role       string `json:"role"`         // Role name (e.g., "Super Admin")
+    CompanyID  string `json:"company_id"`   // Tenant isolation
+    Email      string `json:"email"`        // Employee email
+    FirstName  string `json:"first_name"`   // Display name
+    LastName   string `json:"last_name"`    // Display name
+    jwt.RegisteredClaims                    // Standard JWT claims (exp, iat, sub)
+}
+```
+
+<Info>
+The `CompanyID` claim is critical for multi-tenant isolation. See [Multi-Tenancy](/concepts/multi-tenancy) for details.
+</Info>
+
+### Token Generation
+
+Tokens are signed using HMAC-SHA256 with a secret key:
+
+```go /home/daytona/workspace/source/utils/utils.go:100-113
+claims := AuthClaims{
+    EmployeeID: employeeID,
+    Role:       role,
+    CompanyID:  companyID,
+    Email:      email,
+    FirstName:  firstName,
+    LastName:   lastName,
+    RegisteredClaims: jwt.RegisteredClaims{
+        Subject:   employeeID,
+        IssuedAt:  jwt.NewNumericDate(now),
+        ExpiresAt: jwt.NewNumericDate(now.Add(24 * time.Hour)),
+    },
+}
+
+token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+```
+
+**Token Properties:**
+- **Algorithm**: HS256 (HMAC with SHA-256)
+- **Expiry**: 24 hours from issuance
+- **Secret**: Environment variable `JWT_SECRET`
+
+<Warning>
+The `JWT_SECRET` environment variable must be set and should be a strong, random string (minimum 32 characters).
+</Warning>
+
+## Using Tokens
+
+### Making Authenticated Requests
+
+Include the JWT token in the `Authorization` header using the Bearer scheme:
+
+```bash
+GET /employees/550e8400-e29b-41d4-a716-446655440000
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### Token Validation
+
+API handlers extract and validate tokens from the Authorization header:
+
+```go /home/daytona/workspace/source/handlers/employee_handler.go:311-334
+func authorizeEmployeeToken(r *http.Request, allowedRoles ...string) (*utils.AuthClaims, error) {
+    authHeader := r.Header.Get("Authorization")
+    if authHeader == "" {
+        return nil, errors.New("missing authorization header")
+    }
+
+    parts := strings.SplitN(authHeader, " ", 2)
+    if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+        return nil, errors.New("invalid authorization header")
+    }
+
+    claims, err := utils.ValidateToken(parts[1])
+    if err != nil {
+        return nil, errors.New("invalid token")
+    }
+
+    // Role-based authorization check
+    for _, allowed := range allowedRoles {
+        if claims.Role == allowed {
+            return claims, nil
+        }
+    }
+
+    return nil, errors.New("insufficient role")
+}
+```
+
+### Validation Steps
+
+1. **Parse Token** - Extract and decode JWT
+2. **Verify Signature** - Validate HMAC signature with secret
+3. **Check Expiry** - Ensure token hasn't expired
+4. **Extract Claims** - Return AuthClaims for authorization
+
+```go /home/daytona/workspace/source/utils/utils.go:134-157
+parsed, err := jwt.ParseWithClaims(
+    tokenString,
+    &AuthClaims{},
+    func(token *jwt.Token) (interface{}, error) {
+        if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+            return nil, errors.New("unexpected signing method")
+        }
+        return []byte(secret), nil
+    },
+)
+
+claims, ok := parsed.Claims.(*AuthClaims)
+if !ok || !parsed.Valid {
+    return nil, errors.New("invalid token")
+}
+
+if claims.ExpiresAt != nil && claims.ExpiresAt.Before(time.Now()) {
+    return nil, errors.New("token has expired")
+}
+```
+
+## Token Refresh
+
+The API supports refreshing tokens before they expire:
+
+```go /home/daytona/workspace/source/utils/utils.go:160-175
+func RefreshToken(oldTokenString string) (string, error) {
+    claims, err := ValidateToken(oldTokenString)
+    if err != nil {
+        return "", fmt.Errorf("cannot refresh invalid token: %w", err)
+    }
+
+    return GenerateToken(
+        claims.EmployeeID,
+        claims.Role,
+        claims.CompanyID,
+        claims.Email,
+        claims.FirstName,
+        claims.LastName,
+        24,
+    )
+}
+```
+
+<Tip>
+Refresh tokens proactively before expiry to avoid forcing users to re-authenticate.
+</Tip>
+
+## Password Security
+
+Passwords are hashed using bcrypt before storage:
+
+```go /home/daytona/workspace/source/utils/utils.go:68-78
+// Hash password during employee creation
+func HashPassword(password string) (string, error) {
+    hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    return string(hashed), nil
+}
+
+// Verify password during login
+func VerifyPassword(hashPassword, plainPassword string) bool {
+    return bcrypt.CompareHashAndPassword([]byte(hashPassword), []byte(plainPassword)) == nil
+}
+```
+
+**Security Features:**
+- **Bcrypt** - Adaptive hashing function resistant to brute-force
+- **Default Cost** - Cost factor 10 (2^10 = 1,024 iterations)
+- **Salted Hashes** - Unique salt per password prevents rainbow table attacks
+
+## Error Handling
+
+Authentication can fail for several reasons:
+
+| Error | Status Code | Description |
+|-------|-------------|-------------|
+| `missing authorization header` | 401 | No Authorization header provided |
+| `invalid authorization header` | 401 | Malformed Authorization header |
+| `invalid token` | 401 | Token signature invalid or expired |
+| `insufficient role` | 401 | User lacks required role for endpoint |
+| `invalid credentials` | 401 | Email/password mismatch or inactive user |
+| `company_id mismatch` | 400 | Token company_id doesn't match requested resource |
+
+<CodeGroup>
+```json Missing Token
+{
+  "success": false,
+  "error": "missing authorization header"
+}
+```
+
+```json Invalid Credentials
+{
+  "success": false,
+  "error": "invalid credentials"
+}
+```
+
+```json Expired Token
+{
+  "success": false,
+  "error": "invalid token"
+}
+```
+</CodeGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Secure Token Storage" icon="vault">
+    Store tokens securely on the client side (e.g., httpOnly cookies or secure storage). Never expose tokens in URLs.
+  </Card>
+  
+  <Card title="Use HTTPS" icon="lock">
+    Always transmit tokens over HTTPS to prevent interception. Never send tokens over unencrypted connections.
+  </Card>
+  
+  <Card title="Short Expiry Times" icon="clock">
+    The 24-hour expiry balances security and user experience. Consider shorter expiry for sensitive operations.
+  </Card>
+  
+  <Card title="Rotate Secrets" icon="key">
+    Periodically rotate the `JWT_SECRET` and invalidate old tokens to maintain security.
+  </Card>
+</CardGroup>
+
+## Related Concepts
+
+<CardGroup cols={2}>
+  <Card title="Authorization" icon="shield-check" href="/concepts/authorization">
+    Learn about role-based access control
+  </Card>
+  
+  <Card title="Multi-Tenancy" icon="building" href="/concepts/multi-tenancy">
+    Understand how tokens enforce tenant isolation
+  </Card>
+</CardGroup>

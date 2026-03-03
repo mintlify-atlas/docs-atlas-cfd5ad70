@@ -1,0 +1,198 @@
+---
+title: "Bulk Upload Employees"
+api: "POST /companies/{company_id}/employees/bulk"
+description: "Upload a CSV file to create multiple employees in bulk"
+---
+
+## Authentication
+
+This endpoint requires Bearer token authentication with one of the following roles:
+- `super_admin`
+- `hr_manager`
+
+## Path Parameters
+
+<ParamField path="company_id" type="string" required>
+  The unique identifier of the company (UUID format)
+</ParamField>
+
+## Request Body
+
+This endpoint accepts `multipart/form-data`.
+
+<ParamField body="file" type="file" required>
+  CSV file containing employee data. File must have a `.csv` extension or `text/csv` content type.
+</ParamField>
+
+## CSV Format
+
+The CSV file must include the following headers (column order is flexible):
+
+### Required Columns
+- `email` - Employee email address
+- `first_name` - Employee first name
+- `last_name` - Employee last name
+- `phone` - Employee phone number
+- `employee_code` - Internal employee code (e.g., EMP001)
+- `department_id` - Department UUID
+- `designation_id` - Designation UUID
+- `level_id` - Level UUID
+- `role_id` - Role UUID
+- `status` - Employee status (active, inactive, on_leave, terminated, probation)
+- `employment_type` - Employment type (full_time, part_time, contract, intern)
+- `hire_date` - Hire date (YYYY-MM-DD format)
+
+### Optional Columns
+- `password` - Employee password (if empty, temporary password will be generated)
+- `date_of_birth` - Date of birth (YYYY-MM-DD format)
+- `manager_id` - Manager UUID
+- `gender` - Employee gender
+- `address` - Employee address
+- `emergency_contact_name` - Emergency contact name
+- `emergency_contact_phone` - Emergency contact phone
+- `profile_image_url` - Profile image URL
+
+### Example CSV
+
+```csv
+email,password,phone,first_name,last_name,date_of_birth,employee_code,department_id,designation_id,level_id,role_id,manager_id,status,employment_type,hire_date,gender,address,emergency_contact_name,emergency_contact_phone,profile_image_url
+john.doe@example.com,,+1234567890,John,Doe,1990-01-15,EMP001,dept-uuid,desig-uuid,level-uuid,role-uuid,manager-uuid,active,full_time,2024-01-01,Male,123 Main St,Jane Doe,+1987654321,
+jane.smith@example.com,,+1234567891,Jane,Smith,1992-05-20,EMP002,dept-uuid,desig-uuid,level-uuid,role-uuid,,active,full_time,2024-01-15,Female,456 Oak Ave,John Smith,+1987654322,
+```
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Status message
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <ResponseField name="success_count" type="integer">
+    Number of employees successfully created
+  </ResponseField>
+
+  <ResponseField name="failure_count" type="integer">
+    Number of employees that failed validation
+  </ResponseField>
+
+  <ResponseField name="validation_errors" type="array">
+    Array of validation error objects (only present if failures occurred)
+    
+    <ResponseField name="row_number" type="integer">
+      Row number in CSV where error occurred
+    </ResponseField>
+
+    <ResponseField name="record" type="object">
+      The employee record that failed validation
+    </ResponseField>
+
+    <ResponseField name="errors" type="array">
+      Array of error messages for this record
+    </ResponseField>
+  </ResponseField>
+
+  <ResponseField name="created_employees" type="array">
+    Array of created employee UUIDs (only present on success)
+  </ResponseField>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.companyflow.com/companies/123e4567-e89b-12d3-a456-426614174000/employees/bulk \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "file=@employees.csv"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 201 Success
+{
+  "success": true,
+  "message": "Employees created successfully. Temporary passwords have been generated.",
+  "data": {
+    "success_count": 25,
+    "failure_count": 0,
+    "validation_errors": [],
+    "created_employees": [
+      "emp-uuid-1",
+      "emp-uuid-2",
+      "emp-uuid-3"
+    ]
+  }
+}
+```
+
+```json 400 Validation Failed
+{
+  "success": false,
+  "message": "validation_failed",
+  "data": {
+    "success_count": 23,
+    "failure_count": 2,
+    "validation_errors": [
+      {
+        "row_number": 5,
+        "record": {
+          "email": "invalid-email",
+          "first_name": "John",
+          "last_name": "Doe",
+          "employee_code": "EMP005"
+        },
+        "errors": [
+          "invalid email format",
+          "department_id is required"
+        ]
+      },
+      {
+        "row_number": 12,
+        "record": {
+          "email": "duplicate@example.com",
+          "first_name": "Jane",
+          "last_name": "Smith",
+          "employee_code": "EMP012"
+        },
+        "errors": [
+          "email already exists"
+        ]
+      }
+    ]
+  }
+}
+```
+
+```json 400 Bad Request
+{
+  "success": false,
+  "message": "file must be a CSV file"
+}
+```
+
+```json 400 Empty CSV
+{
+  "success": false,
+  "message": "CSV file contains no records"
+}
+```
+
+```json 400 Missing Columns
+{
+  "success": false,
+  "message": "failed to parse CSV: missing required CSV column: email"
+}
+```
+
+```json 401 Unauthorized
+{
+  "success": false,
+  "message": "insufficient role"
+}
+```
+
+</ResponseExample>

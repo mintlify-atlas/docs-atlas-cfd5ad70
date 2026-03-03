@@ -1,0 +1,579 @@
+---
+title: 'Testing'
+description: 'Testing the CompanyFlow API'
+---
+
+## Overview
+
+CompanyFlow includes a test suite for repositories and core functionality. Tests are written using Go's built-in testing framework and require a test database.
+
+## Prerequisites
+
+Before running tests, ensure you have:
+
+- Go 1.24 or higher installed
+- PostgreSQL test database configured
+- All dependencies installed (`go mod download`)
+
+## Test Database Setup
+
+<Steps>
+  <Step title="Create Test Database">
+    Create a separate database for testing:
+
+    ```bash
+    psql -U postgres
+    ```
+
+    ```sql
+    CREATE DATABASE companyflow_test;
+    CREATE USER companyflow_test WITH PASSWORD 'test_password';
+    GRANT ALL PRIVILEGES ON DATABASE companyflow_test TO companyflow_test;
+    \q
+    ```
+
+    <Warning>
+      Never use your production database for testing. Tests may create, modify, or delete data.
+    </Warning>
+  </Step>
+
+  <Step title="Configure Test Environment">
+    Set test database environment variables:
+
+    <CodeGroup>
+      ```env .env.test
+      DB_HOST=localhost
+      DB_PORT=5432
+      DB_USER=companyflow_test
+      DB_PASSWORD=test_password
+      DB_NAME=companyflow_test
+      DB_SSLMODE=disable
+      PORT=8081
+      CORS_ORIGIN=http://localhost:3000
+      JWT_SECRET=test_jwt_secret_key
+      ```
+
+      ```bash Export Variables
+      export DB_HOST=localhost
+      export DB_PORT=5432
+      export DB_USER=companyflow_test
+      export DB_PASSWORD=test_password
+      export DB_NAME=companyflow_test
+      export DB_SSLMODE=disable
+      export JWT_SECRET=test_jwt_secret_key
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Run Initial Migrations">
+    Run the application once to execute migrations on the test database:
+
+    ```bash
+    # Load test environment variables
+    export $(cat .env.test | xargs)
+    
+    # Run application to execute migrations
+    go run main.go
+    ```
+
+    Stop the application after migrations complete (Ctrl+C).
+  </Step>
+</Steps>
+
+## Running Tests
+
+### Run All Tests
+
+Run the entire test suite:
+
+```bash
+go test ./...
+```
+
+With verbose output:
+
+```bash
+go test -v ./...
+```
+
+### Run Specific Packages
+
+<CodeGroup>
+  ```bash Repository Tests
+  go test ./repositories/...
+  ```
+
+  ```bash Service Tests
+  go test ./services/...
+  ```
+
+  ```bash Handler Tests
+  go test ./handlers/...
+  ```
+
+  ```bash Single Package
+  go test ./repositories/company_test.go
+  ```
+</CodeGroup>
+
+### Run with Coverage
+
+Generate test coverage reports:
+
+```bash
+# Generate coverage report
+go test ./... -coverprofile=coverage.out
+
+# View coverage in terminal
+go tool cover -func=coverage.out
+
+# Generate HTML coverage report
+go tool cover -html=coverage.out -o coverage.html
+```
+
+### Run Specific Tests
+
+Run tests matching a pattern:
+
+```bash
+# Run tests with "Company" in the name
+go test ./... -run Company
+
+# Run a specific test function
+go test ./repositories -run TestCreateCompany
+```
+
+## Test Structure
+
+CompanyFlow tests are organized by layer:
+
+```
+.
+├── repositories/
+│   ├── company_repository_test.go
+│   ├── employee_repository_test.go
+│   └── ...
+├── services/
+│   ├── company_service_test.go
+│   └── ...
+└── handlers/
+    ├── company_handler_test.go
+    └── ...
+```
+
+## Writing Tests
+
+### Repository Test Example
+
+Here's an example of how to write a repository test:
+
+```go repositories/company_repository_test.go
+package repositories_test
+
+import (
+    "context"
+    "testing"
+    "github.com/falasefemi2/companyflowlow/config"
+    "github.com/falasefemi2/companyflowlow/repositories"
+    "github.com/falasefemi2/companyflowlow/models"
+)
+
+func TestCreateCompany(t *testing.T) {
+    // Setup
+    pool, err := config.InitDB()
+    if err != nil {
+        t.Fatalf("Failed to connect to database: %v", err)
+    }
+    defer pool.Close()
+
+    repo := repositories.NewCompanyRepository(pool)
+    ctx := context.Background()
+
+    // Test data
+    company := &models.Company{
+        Name:     "Test Company",
+        Slug:     "test-company",
+        Industry: "Technology",
+        Country:  "United States",
+    }
+
+    // Execute
+    created, err := repo.Create(ctx, company)
+    if err != nil {
+        t.Fatalf("Failed to create company: %v", err)
+    }
+
+    // Verify
+    if created.ID == "" {
+        t.Error("Expected company ID to be set")
+    }
+    if created.Name != company.Name {
+        t.Errorf("Expected name %s, got %s", company.Name, created.Name)
+    }
+
+    // Cleanup
+    _, err = pool.Exec(ctx, "DELETE FROM companies WHERE id = $1", created.ID)
+    if err != nil {
+        t.Logf("Failed to cleanup test data: %v", err)
+    }
+}
+```
+
+### Service Test Example
+
+Example service test with mocked repository:
+
+```go services/company_service_test.go
+package services_test
+
+import (
+    "context"
+    "testing"
+    "github.com/falasefemi2/companyflowlow/services"
+    "github.com/falasefemi2/companyflowlow/models"
+)
+
+type mockCompanyRepo struct{}
+
+func (m *mockCompanyRepo) Create(ctx context.Context, company *models.Company) (*models.Company, error) {
+    company.ID = "mock-id-123"
+    return company, nil
+}
+
+func TestCompanyService_Create(t *testing.T) {
+    repo := &mockCompanyRepo{}
+    service := services.NewCompanyService(repo)
+    ctx := context.Background()
+
+    company := &models.Company{
+        Name: "Test Company",
+        Slug: "test-company",
+    }
+
+    created, err := service.CreateCompany(ctx, company)
+    if err != nil {
+        t.Fatalf("Expected no error, got %v", err)
+    }
+
+    if created.ID != "mock-id-123" {
+        t.Errorf("Expected ID mock-id-123, got %s", created.ID)
+    }
+}
+```
+
+### Handler Test Example
+
+Example HTTP handler test:
+
+```go handlers/company_handler_test.go
+package handlers_test
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+    "net/http/httptest"
+    "testing"
+    "github.com/gorilla/mux"
+    "github.com/falasefemi2/companyflowlow/handlers"
+    "github.com/falasefemi2/companyflowlow/dto"
+)
+
+func TestCreateCompanyHandler(t *testing.T) {
+    // Setup
+    router := mux.NewRouter()
+    handler := handlers.NewCompanyHandler(mockService)
+    handler.RegisterRoutes(router)
+
+    // Request body
+    reqBody := dto.CreateCompanyRequest{
+        Name:     "Test Company",
+        Slug:     "test-company",
+        Industry: "Technology",
+    }
+    body, _ := json.Marshal(reqBody)
+
+    // Create request
+    req := httptest.NewRequest(http.MethodPost, "/api/v1/companies", bytes.NewBuffer(body))
+    req.Header.Set("Content-Type", "application/json")
+    
+    // Record response
+    w := httptest.NewRecorder()
+    router.ServeHTTP(w, req)
+
+    // Assert
+    if w.Code != http.StatusCreated {
+        t.Errorf("Expected status 201, got %d", w.Code)
+    }
+
+    var response dto.CompanyResponse
+    json.NewDecoder(w.Body).Decode(&response)
+    
+    if response.Name != reqBody.Name {
+        t.Errorf("Expected name %s, got %s", reqBody.Name, response.Name)
+    }
+}
+```
+
+## Test Best Practices
+
+### Clean Up Test Data
+
+Always clean up test data after tests:
+
+```go
+t.Cleanup(func() {
+    pool.Exec(context.Background(), "DELETE FROM companies WHERE id = $1", companyID)
+})
+```
+
+### Use Table-Driven Tests
+
+Test multiple scenarios efficiently:
+
+```go
+func TestValidateEmail(t *testing.T) {
+    tests := []struct {
+        name    string
+        email   string
+        wantErr bool
+    }{
+        {"valid email", "user@example.com", false},
+        {"invalid email", "invalid", true},
+        {"empty email", "", true},
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            err := validateEmail(tt.email)
+            if (err != nil) != tt.wantErr {
+                t.Errorf("validateEmail() error = %v, wantErr %v", err, tt.wantErr)
+            }
+        })
+    }
+}
+```
+
+### Use Test Fixtures
+
+Create reusable test data:
+
+```go
+func createTestCompany(t *testing.T, pool *pgxpool.Pool) *models.Company {
+    company := &models.Company{
+        Name: "Test Company",
+        Slug: fmt.Sprintf("test-%d", time.Now().Unix()),
+    }
+    
+    repo := repositories.NewCompanyRepository(pool)
+    created, err := repo.Create(context.Background(), company)
+    if err != nil {
+        t.Fatalf("Failed to create test company: %v", err)
+    }
+    
+    return created
+}
+```
+
+### Use Subtests
+
+Organize related tests:
+
+```go
+func TestCompanyRepository(t *testing.T) {
+    pool := setupTestDB(t)
+    defer pool.Close()
+
+    t.Run("Create", func(t *testing.T) {
+        // Test create functionality
+    })
+
+    t.Run("Get", func(t *testing.T) {
+        // Test get functionality
+    })
+
+    t.Run("Update", func(t *testing.T) {
+        // Test update functionality
+    })
+}
+```
+
+## Integration Testing
+
+### Test API Endpoints
+
+Test complete API workflows:
+
+```bash
+# Start test server
+go run main.go &
+SERVER_PID=$!
+
+# Run API tests with curl
+curl -X POST http://localhost:8080/api/v1/companies \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test Co","slug":"test-co"}'
+
+# Stop server
+kill $SERVER_PID
+```
+
+### Use Test Containers
+
+For isolated integration tests, use Docker:
+
+```bash
+# Start test database
+docker run -d --name companyflow-test \
+  -e POSTGRES_DB=companyflow_test \
+  -e POSTGRES_USER=test \
+  -e POSTGRES_PASSWORD=test \
+  -p 5433:5432 \
+  postgres:14
+
+# Run tests
+DB_PORT=5433 go test ./...
+
+# Cleanup
+docker stop companyflow-test
+docker rm companyflow-test
+```
+
+## Continuous Integration
+
+### GitHub Actions Example
+
+```yaml .github/workflows/test.yml
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_DB: companyflow_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+      
+      - name: Install dependencies
+        run: go mod download
+      
+      - name: Run tests
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test
+          DB_PASSWORD: test
+          DB_NAME: companyflow_test
+          DB_SSLMODE: disable
+          JWT_SECRET: test_secret
+        run: go test -v -coverprofile=coverage.out ./...
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.out
+```
+
+## Performance Testing
+
+### Benchmark Tests
+
+Write benchmark tests for performance-critical code:
+
+```go
+func BenchmarkCompanyRepository_Create(b *testing.B) {
+    pool := setupTestDB(b)
+    defer pool.Close()
+    
+    repo := repositories.NewCompanyRepository(pool)
+    ctx := context.Background()
+
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
+        company := &models.Company{
+            Name: fmt.Sprintf("Company %d", i),
+            Slug: fmt.Sprintf("company-%d", i),
+        }
+        repo.Create(ctx, company)
+    }
+}
+```
+
+Run benchmarks:
+
+```bash
+go test -bench=. -benchmem ./repositories
+```
+
+## Troubleshooting
+
+### Tests Fail to Connect to Database
+
+Ensure test database is running and environment variables are set:
+
+```bash
+# Check PostgreSQL is running
+pg_isready -h localhost -p 5432
+
+# Verify environment variables
+echo $DB_NAME
+echo $DB_USER
+```
+
+### Tests Hang or Timeout
+
+Set a test timeout:
+
+```bash
+go test -timeout 30s ./...
+```
+
+### Race Conditions
+
+Detect race conditions:
+
+```bash
+go test -race ./...
+```
+
+### Database State Issues
+
+If tests fail due to dirty database state:
+
+```bash
+# Reset test database
+psql -U postgres -c "DROP DATABASE companyflow_test;"
+psql -U postgres -c "CREATE DATABASE companyflow_test;"
+
+# Re-run migrations
+export $(cat .env.test | xargs) && go run main.go
+```
+
+## Next Steps
+
+After testing your API:
+
+1. [Explore the API documentation](/api/auth/login)
+2. [Learn about authentication](/concepts/authentication)
+3. [Review database setup](/guides/database-setup)

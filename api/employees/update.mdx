@@ -1,0 +1,270 @@
+---
+title: "Update Employee"
+api: "PUT /employees/{id}"
+description: "Update an employee's information"
+---
+
+## Authentication
+
+This endpoint requires Bearer token authentication with one of the following roles:
+- `super_admin`
+- `hr_manager`
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the employee (UUID format)
+</ParamField>
+
+## Request Body
+
+All fields are optional. Only include fields you want to update.
+
+<ParamField body="phone" type="string">
+  Employee phone number
+</ParamField>
+
+<ParamField body="first_name" type="string">
+  Employee first name
+</ParamField>
+
+<ParamField body="last_name" type="string">
+  Employee last name
+</ParamField>
+
+<ParamField body="date_of_birth" type="string">
+  Employee date of birth (format: YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="department_id" type="string">
+  Department UUID
+</ParamField>
+
+<ParamField body="designation_id" type="string">
+  Designation UUID
+</ParamField>
+
+<ParamField body="level_id" type="string">
+  Level UUID
+</ParamField>
+
+<ParamField body="manager_id" type="string">
+  Manager UUID
+</ParamField>
+
+<ParamField body="status" type="string">
+  Employee status. Must be one of:
+  - `active`
+  - `inactive`
+  - `on_leave`
+  - `terminated`
+  - `probation`
+</ParamField>
+
+<ParamField body="gender" type="string">
+  Employee gender
+</ParamField>
+
+<ParamField body="address" type="string">
+  Employee address
+</ParamField>
+
+<ParamField body="emergency_contact_name" type="string">
+  Emergency contact name
+</ParamField>
+
+<ParamField body="emergency_contact_phone" type="string">
+  Emergency contact phone number
+</ParamField>
+
+<ParamField body="profile_image_url" type="string">
+  Profile image URL
+</ParamField>
+
+<ParamField body="termination_date" type="string">
+  Termination date (format: YYYY-MM-DD)
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <ResponseField name="id" type="string">
+    Employee UUID
+  </ResponseField>
+
+  <ResponseField name="company_id" type="string">
+    Company UUID
+  </ResponseField>
+
+  <ResponseField name="email" type="string">
+    Employee email address
+  </ResponseField>
+
+  <ResponseField name="phone" type="string">
+    Employee phone number
+  </ResponseField>
+
+  <ResponseField name="first_name" type="string">
+    Employee first name
+  </ResponseField>
+
+  <ResponseField name="last_name" type="string">
+    Employee last name
+  </ResponseField>
+
+  <ResponseField name="employee_code" type="string">
+    Internal employee code
+  </ResponseField>
+
+  <ResponseField name="department_id" type="string">
+    Department UUID
+  </ResponseField>
+
+  <ResponseField name="designation_id" type="string">
+    Designation UUID
+  </ResponseField>
+
+  <ResponseField name="level_id" type="string">
+    Level UUID
+  </ResponseField>
+
+  <ResponseField name="role_id" type="string">
+    Role UUID
+  </ResponseField>
+
+  <ResponseField name="manager_id" type="string">
+    Manager UUID
+  </ResponseField>
+
+  <ResponseField name="status" type="string">
+    Employee status
+  </ResponseField>
+
+  <ResponseField name="employment_type" type="string">
+    Employment type
+  </ResponseField>
+
+  <ResponseField name="date_of_birth" type="string" nullable>
+    Date of birth (ISO 8601 format)
+  </ResponseField>
+
+  <ResponseField name="hire_date" type="string">
+    Hire date (ISO 8601 format)
+  </ResponseField>
+
+  <ResponseField name="termination_date" type="string" nullable>
+    Termination date (ISO 8601 format)
+  </ResponseField>
+
+  <ResponseField name="gender" type="string">
+    Employee gender
+  </ResponseField>
+
+  <ResponseField name="address" type="string">
+    Employee address
+  </ResponseField>
+
+  <ResponseField name="emergency_contact_name" type="string">
+    Emergency contact name
+  </ResponseField>
+
+  <ResponseField name="emergency_contact_phone" type="string">
+    Emergency contact phone
+  </ResponseField>
+
+  <ResponseField name="profile_image_url" type="string">
+    Profile image URL
+  </ResponseField>
+
+  <ResponseField name="last_login_at" type="string" nullable>
+    Last login timestamp (ISO 8601 format)
+  </ResponseField>
+
+  <ResponseField name="created_at" type="string">
+    Creation timestamp (ISO 8601 format)
+  </ResponseField>
+
+  <ResponseField name="updated_at" type="string">
+    Last update timestamp (ISO 8601 format)
+  </ResponseField>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL (PUT)
+curl -X PUT https://api.companyflow.com/employees/emp-uuid-here \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "+1234567899",
+    "status": "on_leave",
+    "address": "456 New Street, City, State"
+  }'
+```
+
+```bash cURL (PATCH)
+curl -X PATCH https://api.companyflow.com/employees/emp-uuid-here \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "department_id": "new-dept-uuid",
+    "designation_id": "new-desig-uuid"
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200 Success
+{
+  "success": true,
+  "data": {
+    "id": "emp-uuid-here",
+    "company_id": "123e4567-e89b-12d3-a456-426614174000",
+    "email": "john.doe@example.com",
+    "phone": "+1234567899",
+    "first_name": "John",
+    "last_name": "Doe",
+    "employee_code": "EMP001",
+    "department_id": "new-dept-uuid",
+    "designation_id": "new-desig-uuid",
+    "level_id": "level-uuid-here",
+    "role_id": "role-uuid-here",
+    "manager_id": "manager-uuid-here",
+    "status": "on_leave",
+    "employment_type": "full_time",
+    "date_of_birth": "1990-01-15T00:00:00Z",
+    "hire_date": "2024-01-01T00:00:00Z",
+    "termination_date": null,
+    "gender": "Male",
+    "address": "456 New Street, City, State",
+    "emergency_contact_name": "Jane Doe",
+    "emergency_contact_phone": "+1987654321",
+    "profile_image_url": "",
+    "last_login_at": "2024-03-01T15:30:00Z",
+    "created_at": "2024-01-01T10:00:00Z",
+    "updated_at": "2024-03-03T10:15:00Z"
+  }
+}
+```
+
+```json 400 Bad Request
+{
+  "success": false,
+  "message": "invalid request body"
+}
+```
+
+```json 401 Unauthorized
+{
+  "success": false,
+  "message": "insufficient role"
+}
+```
+
+</ResponseExample>

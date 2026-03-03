@@ -1,0 +1,349 @@
+---
+title: 'Authorization (RBAC)'
+description: 'Understand role-based access control and permission management in CompanyFlow'
+---
+
+## Overview
+
+CompanyFlow implements **Role-Based Access Control (RBAC)** to manage what authenticated users can do within the system. Authorization determines which actions users can perform on specific resources based on their assigned role.
+
+## Core Concepts
+
+### Roles
+
+Roles define a set of permissions that can be assigned to employees. CompanyFlow includes both **system roles** and **custom roles**.
+
+```sql /home/daytona/workspace/source/database/migration/002_create_roles_and_permissions.sql:1-11
+CREATE TABLE roles (
+    id UUID PRIMARY KEY,
+    company_id UUID NULL,               -- NULL for system roles
+    name VARCHAR(50) NOT NULL,
+    description TEXT,
+    is_system_role BOOLEAN DEFAULT false,
+    permissions_cache JSONB DEFAULT '[]',
+    created_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE,
+    UNIQUE (company_id, name),
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+);
+```
+
+<Info>
+System roles have `company_id = NULL` and are available globally. Custom roles are scoped to a specific company.
+</Info>
+
+### System Roles
+
+CompanyFlow includes four predefined system roles:
+
+```sql /home/daytona/workspace/source/database/migration/002_create_roles_and_permissions.sql:15-19
+INSERT INTO roles (name, description, is_system_role, permissions_cache) VALUES 
+    ('Super Admin', 'Full company access', true, '["all"]'),
+    ('HR Manager', 'HR administration', true, '["hr_full"]'),
+    ('Manager', 'Team management', true, '["team_management"]'),
+    ('Employee', 'Standard access', true, '["self_service"]');
+```
+
+<CardGroup cols={2}>
+  <Card title="Super Admin" icon="crown">
+    **Full Access**
+    
+    Complete control over all company resources, settings, and employee management.
+  </Card>
+  
+  <Card title="HR Manager" icon="users">
+    **HR Administration**
+    
+    Manage employees, departments, leaves, and other HR-related resources.
+  </Card>
+  
+  <Card title="Manager" icon="user-tie">
+    **Team Management**
+    
+    Approve leave requests, manage team members, and view subordinate information.
+  </Card>
+  
+  <Card title="Employee" icon="user">
+    **Self-Service**
+    
+    Access own profile, submit leave requests, and view personal information.
+  </Card>
+</CardGroup>
+
+### Permissions
+
+Permissions define granular access controls for specific actions on resources:
+
+```sql /home/daytona/workspace/source/database/migration/002_create_roles_and_permissions.sql:21-32
+CREATE TABLE permissions (
+    id UUID PRIMARY KEY,
+    role_id UUID NOT NULL,
+    action VARCHAR(100) NOT NULL,  -- 'create', 'read', 'update', 'delete', 'approve', 'reject', 'manage'
+    resource VARCHAR(100) NOT NULL, -- 'employees', 'leaves', 'company_settings', etc.
+    conditions JSONB DEFAULT '{}',  -- {"department": "own", "level": "subordinate"}
+    created_at TIMESTAMP WITH TIME ZONE,
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
+);
+```
+
+**Permission Components:**
+- **Action** - What operation can be performed (create, read, update, delete, approve, reject, manage)
+- **Resource** - Which entity the permission applies to (employees, leaves, company_settings, etc.)
+- **Conditions** - Optional constraints (e.g., only own department, only subordinates)
+
+## Authorization Flow
+
+### 1. Authentication
+
+First, the user must authenticate and receive a JWT token containing their role:
+
+```json
+{
+  "employee_id": "550e8400-e29b-41d4-a716-446655440000",
+  "role": "HR Manager",
+  "company_id": "660e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+See [Authentication](/concepts/authentication) for details on JWT tokens.
+
+### 2. Role Validation
+
+API endpoints specify which roles are permitted to access them:
+
+```go /home/daytona/workspace/source/handlers/employee_handler.go:46-51
+func (h *EmployeeHandler) CreateEmployee(w http.ResponseWriter, r *http.Request) {
+    claims, err := authorizeEmployeeToken(r, roleSuperAdmin, roleHRManager)
+    if err != nil {
+        utils.RespondWithError(w, http.StatusUnauthorized, err.Error())
+        return
+    }
+    // ... create employee logic
+}
+```
+
+In this example, only **Super Admin** and **HR Manager** roles can create employees.
+
+### 3. Authorization Check
+
+The `authorizeEmployeeToken` function validates the user's role:
+
+```go /home/daytona/workspace/source/handlers/employee_handler.go:311-334
+func authorizeEmployeeToken(r *http.Request, allowedRoles ...string) (*utils.AuthClaims, error) {
+    authHeader := r.Header.Get("Authorization")
+    if authHeader == "" {
+        return nil, errors.New("missing authorization header")
+    }
+
+    parts := strings.SplitN(authHeader, " ", 2)
+    if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+        return nil, errors.New("invalid authorization header")
+    }
+
+    claims, err := utils.ValidateToken(parts[1])
+    if err != nil {
+        return nil, errors.New("invalid token")
+    }
+
+    // Check if user's role is in the allowed list
+    for _, allowed := range allowedRoles {
+        if claims.Role == allowed {
+            return claims, nil
+        }
+    }
+
+    return nil, errors.New("insufficient role")
+}
+```
+
+**Authorization Steps:**
+1. Extract JWT token from Authorization header
+2. Validate token signature and expiry
+3. Extract user's role from claims
+4. Check if role is in the allowed roles list
+5. Return error if unauthorized
+
+## Endpoint Authorization
+
+Different endpoints require different role combinations:
+
+### Employee Management
+
+| Endpoint | Allowed Roles | Description |
+|----------|---------------|-------------|
+| `POST /companies/{id}/employees` | Super Admin, HR Manager | Create new employee |
+| `GET /employees/{id}` | Super Admin, HR Manager | View employee details |
+| `PUT /employees/{id}` | Super Admin, HR Manager | Update employee |
+| `DELETE /employees/{id}` | Super Admin, HR Manager | Delete employee |
+| `GET /companies/{id}/employees` | Super Admin, HR Manager | List all employees |
+
+### Leave Management
+
+| Endpoint | Allowed Roles | Description |
+|----------|---------------|-------------|
+| `POST /companies/{id}/leave-types` | Super Admin, HR Manager | Create leave type |
+| `POST /leaves` | Employee, Manager | Submit leave request |
+| `GET /leaves/{id}` | Super Admin, HR Manager, Employee, Manager | View leave details |
+| `POST /leaves/{id}/approve` | Super Admin, HR Manager, Manager | Approve leave |
+| `POST /leaves/{id}/reject` | Super Admin, HR Manager, Manager | Reject leave |
+
+### Department Management
+
+| Endpoint | Allowed Roles | Description |
+|----------|---------------|-------------|
+| `POST /companies/{id}/departments` | Super Admin, HR Manager | Create department |
+| `GET /departments/{id}` | Super Admin, HR Manager | View department |
+| `PUT /departments/{id}` | Super Admin, HR Manager | Update department |
+| `DELETE /departments/{id}` | Super Admin, HR Manager | Delete department |
+
+<Warning>
+Attempting to access an endpoint without the required role will return a `401 Unauthorized` error.
+</Warning>
+
+## Role Constants
+
+Role names are defined as constants in handlers:
+
+```go /home/daytona/workspace/source/handlers/department_handler.go:16-19
+const (
+    roleSuperAdmin = "Super Admin"
+    roleHRManager  = "HR Manager"
+    roleManager    = "Manager"
+    roleEmployee   = "Employee"
+)
+```
+
+<Tip>
+When checking roles in the JWT token, these exact string values must match. Role names are case-sensitive.
+</Tip>
+
+## Permission Conditions
+
+The `conditions` JSONB field in the permissions table allows for conditional access:
+
+```json
+{
+  "department": "own",
+  "level": "subordinate"
+}
+```
+
+**Example Conditions:**
+- `{"department": "own"}` - Only access resources in own department
+- `{"level": "subordinate"}` - Only manage direct reports
+- `{"status": "pending"}` - Only interact with pending items
+
+<Note>
+While the schema supports conditional permissions, the current implementation primarily uses role-based checks. Custom permission conditions can be implemented in service layer logic.
+</Note>
+
+## Custom Roles
+
+Companies can create custom roles tailored to their organizational structure. Custom roles:
+
+- Are scoped to a specific `company_id`
+- Can be assigned custom permissions
+- Use the same permission model as system roles
+- Are managed through the roles API endpoints
+
+```sql
+INSERT INTO roles (company_id, name, description, permissions_cache)
+VALUES (
+    '660e8400-e29b-41d4-a716-446655440000',
+    'Payroll Specialist',
+    'Manage payroll and compensation',
+    '["payroll_full", "employees_read"]'
+);
+```
+
+## Multi-Tenant Authorization
+
+Authorization is enforced per tenant using the `company_id` from the JWT token:
+
+```go /home/daytona/workspace/source/handlers/employee_handler.go:293-308
+func parseEmployeeCompanyID(r *http.Request, claims *utils.AuthClaims) (uuid.UUID, error) {
+    companyIDStr := mux.Vars(r)["company_id"]
+    if companyIDStr == "" {
+        companyIDStr = claims.CompanyID
+    }
+
+    companyID, err := uuid.Parse(companyIDStr)
+    if err != nil {
+        return uuid.Nil, err
+    }
+
+    if claims.CompanyID != "" && claims.CompanyID != companyID.String() {
+        return uuid.Nil, errors.New("company_id mismatch")
+    }
+
+    return companyID, nil
+}
+```
+
+This ensures users can only access resources within their own company. See [Multi-Tenancy](/concepts/multi-tenancy) for details.
+
+## Error Responses
+
+Unauthorized access attempts return appropriate error responses:
+
+<CodeGroup>
+```json Missing Authorization
+{
+  "success": false,
+  "error": "missing authorization header"
+}
+```
+
+```json Invalid Token
+{
+  "success": false,
+  "error": "invalid token"
+}
+```
+
+```json Insufficient Role
+{
+  "success": false,
+  "error": "insufficient role"
+}
+```
+
+```json Tenant Mismatch
+{
+  "success": false,
+  "error": "company_id mismatch"
+}
+```
+</CodeGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Principle of Least Privilege" icon="shield">
+    Assign the minimum role necessary for users to perform their job functions.
+  </Card>
+  
+  <Card title="Regular Audits" icon="magnifying-glass">
+    Periodically review role assignments to ensure they remain appropriate.
+  </Card>
+  
+  <Card title="Use System Roles" icon="list-check">
+    Leverage built-in system roles before creating custom ones.
+  </Card>
+  
+  <Card title="Document Custom Roles" icon="book">
+    Clearly document the purpose and permissions of any custom roles created.
+  </Card>
+</CardGroup>
+
+## Related Concepts
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/concepts/authentication">
+    Learn how users authenticate and receive role claims
+  </Card>
+  
+  <Card title="Multi-Tenancy" icon="building" href="/concepts/multi-tenancy">
+    Understand how authorization is scoped per company
+  </Card>
+</CardGroup>

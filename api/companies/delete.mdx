@@ -1,0 +1,82 @@
+---
+title: 'Delete Company'
+api: 'DELETE /companies/{id}'
+---
+
+Delete a company by ID. By default, performs a soft delete. Use the `hard_delete` query parameter for permanent deletion.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Company UUID
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="hard_delete" type="boolean" default="false">
+  When set to `true`, permanently deletes the company. Otherwise, performs a soft delete (marks as deleted but retains data).
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message
+</ResponseField>
+
+## Request Examples
+
+<Tabs>
+  <Tab title="Soft Delete">
+    ```bash cURL
+    curl -X DELETE https://api.companyflow.com/companies/123e4567-e89b-12d3-a456-426614174000 \
+      -H "Authorization: Bearer YOUR_JWT_TOKEN"
+    ```
+  </Tab>
+  
+  <Tab title="Hard Delete">
+    ```bash cURL
+    curl -X DELETE "https://api.companyflow.com/companies/123e4567-e89b-12d3-a456-426614174000?hard_delete=true" \
+      -H "Authorization: Bearer YOUR_JWT_TOKEN"
+    ```
+  </Tab>
+</Tabs>
+
+## Response Example
+
+```json 200 OK
+{
+  "success": true,
+  "message": "company deleted"
+}
+```
+
+```json 400 Bad Request
+{
+  "success": false,
+  "message": "invalid company id"
+}
+```
+
+```json 500 Internal Server Error
+{
+  "success": false,
+  "message": "internal server error"
+}
+```
+
+## Error Responses
+
+| Status Code | Description |
+|-------------|-------------|
+| 400 | Invalid company ID format (must be valid UUID) |
+| 500 | Internal server error |
+
+## Important Notes
+
+- **Soft Delete** (default): The company is marked as deleted but data is retained in the database. This allows for potential recovery and maintains referential integrity.
+- **Hard Delete**: The company record is permanently removed from the database. This action cannot be undone.
+- Deleting a company may affect related resources such as users, projects, and other associated data. Ensure you understand the implications before performing a hard delete.

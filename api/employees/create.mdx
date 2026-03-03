@@ -1,0 +1,298 @@
+---
+title: "Create Employee"
+api: "POST /companies/{company_id}/employees"
+description: "Create a new employee in a company"
+---
+
+## Authentication
+
+This endpoint requires Bearer token authentication with one of the following roles:
+- `super_admin`
+- `hr_manager`
+
+## Path Parameters
+
+<ParamField path="company_id" type="string" required>
+  The unique identifier of the company (UUID format)
+</ParamField>
+
+## Request Body
+
+<ParamField body="email" type="string" required>
+  Employee email address (must be valid email format)
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  Employee password (minimum 8 characters)
+</ParamField>
+
+<ParamField body="phone" type="string" required>
+  Employee phone number
+</ParamField>
+
+<ParamField body="first_name" type="string" required>
+  Employee first name
+</ParamField>
+
+<ParamField body="last_name" type="string" required>
+  Employee last name
+</ParamField>
+
+<ParamField body="date_of_birth" type="string" required>
+  Employee date of birth (format: YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="employee_code" type="string" required>
+  Internal employee code/ID (e.g., EMP001)
+</ParamField>
+
+<ParamField body="department_id" type="string" required>
+  Department UUID
+</ParamField>
+
+<ParamField body="designation_id" type="string" required>
+  Designation UUID
+</ParamField>
+
+<ParamField body="level_id" type="string" required>
+  Level UUID
+</ParamField>
+
+<ParamField body="role_id" type="string" required>
+  Role UUID
+</ParamField>
+
+<ParamField body="manager_id" type="string">
+  Manager UUID (optional)
+</ParamField>
+
+<ParamField body="status" type="string" required>
+  Employee status. Must be one of:
+  - `active`
+  - `inactive`
+  - `on_leave`
+  - `terminated`
+  - `probation`
+</ParamField>
+
+<ParamField body="employment_type" type="string" required>
+  Employment type. Must be one of:
+  - `full_time`
+  - `part_time`
+  - `contract`
+  - `intern`
+</ParamField>
+
+<ParamField body="hire_date" type="string" required>
+  Employee hire date (format: YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="gender" type="string">
+  Employee gender (optional)
+</ParamField>
+
+<ParamField body="address" type="string">
+  Employee address (optional)
+</ParamField>
+
+<ParamField body="emergency_contact_name" type="string">
+  Emergency contact name (optional)
+</ParamField>
+
+<ParamField body="emergency_contact_phone" type="string">
+  Emergency contact phone number (optional)
+</ParamField>
+
+<ParamField body="profile_image_url" type="string">
+  Profile image URL (optional)
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <ResponseField name="id" type="string">
+    Employee UUID
+  </ResponseField>
+
+  <ResponseField name="company_id" type="string">
+    Company UUID
+  </ResponseField>
+
+  <ResponseField name="email" type="string">
+    Employee email address
+  </ResponseField>
+
+  <ResponseField name="phone" type="string">
+    Employee phone number
+  </ResponseField>
+
+  <ResponseField name="first_name" type="string">
+    Employee first name
+  </ResponseField>
+
+  <ResponseField name="last_name" type="string">
+    Employee last name
+  </ResponseField>
+
+  <ResponseField name="employee_code" type="string">
+    Internal employee code
+  </ResponseField>
+
+  <ResponseField name="department_id" type="string">
+    Department UUID
+  </ResponseField>
+
+  <ResponseField name="designation_id" type="string">
+    Designation UUID
+  </ResponseField>
+
+  <ResponseField name="level_id" type="string">
+    Level UUID
+  </ResponseField>
+
+  <ResponseField name="role_id" type="string">
+    Role UUID
+  </ResponseField>
+
+  <ResponseField name="manager_id" type="string">
+    Manager UUID
+  </ResponseField>
+
+  <ResponseField name="status" type="string">
+    Employee status
+  </ResponseField>
+
+  <ResponseField name="employment_type" type="string">
+    Employment type
+  </ResponseField>
+
+  <ResponseField name="date_of_birth" type="string" nullable>
+    Date of birth (ISO 8601 format)
+  </ResponseField>
+
+  <ResponseField name="hire_date" type="string">
+    Hire date (ISO 8601 format)
+  </ResponseField>
+
+  <ResponseField name="termination_date" type="string" nullable>
+    Termination date (ISO 8601 format)
+  </ResponseField>
+
+  <ResponseField name="gender" type="string">
+    Employee gender
+  </ResponseField>
+
+  <ResponseField name="address" type="string">
+    Employee address
+  </ResponseField>
+
+  <ResponseField name="emergency_contact_name" type="string">
+    Emergency contact name
+  </ResponseField>
+
+  <ResponseField name="emergency_contact_phone" type="string">
+    Emergency contact phone
+  </ResponseField>
+
+  <ResponseField name="profile_image_url" type="string">
+    Profile image URL
+  </ResponseField>
+
+  <ResponseField name="last_login_at" type="string" nullable>
+    Last login timestamp (ISO 8601 format)
+  </ResponseField>
+
+  <ResponseField name="created_at" type="string">
+    Creation timestamp (ISO 8601 format)
+  </ResponseField>
+
+  <ResponseField name="updated_at" type="string">
+    Last update timestamp (ISO 8601 format)
+  </ResponseField>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.companyflow.com/companies/123e4567-e89b-12d3-a456-426614174000/employees \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john.doe@example.com",
+    "password": "SecurePass123",
+    "phone": "+1234567890",
+    "first_name": "John",
+    "last_name": "Doe",
+    "date_of_birth": "1990-01-15",
+    "employee_code": "EMP001",
+    "department_id": "dept-uuid-here",
+    "designation_id": "desig-uuid-here",
+    "level_id": "level-uuid-here",
+    "role_id": "role-uuid-here",
+    "manager_id": "manager-uuid-here",
+    "status": "active",
+    "employment_type": "full_time",
+    "hire_date": "2024-01-01",
+    "gender": "Male",
+    "address": "123 Main St, City, State",
+    "emergency_contact_name": "Jane Doe",
+    "emergency_contact_phone": "+1987654321"
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 201 Success
+{
+  "success": true,
+  "data": {
+    "id": "emp-uuid-here",
+    "company_id": "123e4567-e89b-12d3-a456-426614174000",
+    "email": "john.doe@example.com",
+    "phone": "+1234567890",
+    "first_name": "John",
+    "last_name": "Doe",
+    "employee_code": "EMP001",
+    "department_id": "dept-uuid-here",
+    "designation_id": "desig-uuid-here",
+    "level_id": "level-uuid-here",
+    "role_id": "role-uuid-here",
+    "manager_id": "manager-uuid-here",
+    "status": "active",
+    "employment_type": "full_time",
+    "date_of_birth": "1990-01-15T00:00:00Z",
+    "hire_date": "2024-01-01T00:00:00Z",
+    "termination_date": null,
+    "gender": "Male",
+    "address": "123 Main St, City, State",
+    "emergency_contact_name": "Jane Doe",
+    "emergency_contact_phone": "+1987654321",
+    "profile_image_url": "",
+    "last_login_at": null,
+    "created_at": "2024-03-03T10:00:00Z",
+    "updated_at": "2024-03-03T10:00:00Z"
+  }
+}
+```
+
+```json 400 Bad Request
+{
+  "success": false,
+  "message": "invalid request body"
+}
+```
+
+```json 401 Unauthorized
+{
+  "success": false,
+  "message": "insufficient role"
+}
+```
+
+</ResponseExample>

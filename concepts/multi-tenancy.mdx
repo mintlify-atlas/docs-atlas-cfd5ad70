@@ -1,0 +1,158 @@
+---
+title: 'Multi-Tenancy Architecture'
+description: 'Understand how CompanyFlow implements multi-tenant isolation and data segregation'
+---
+
+## Overview
+
+CompanyFlow uses a **multi-tenant architecture** where each company operates as an isolated tenant with its own data, settings, and user base. This design ensures complete data separation between organizations while maintaining a single unified application.
+
+## Core Concepts
+
+### Company Entity
+
+Every tenant is represented by a `companies` record that stores organizational information:
+
+```sql
+CREATE TABLE companies (
+    id UUID PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,  -- For subdomain routing
+    industry VARCHAR(100),
+    country VARCHAR(100),
+    timezone VARCHAR(50) DEFAULT 'UTC',
+    currency VARCHAR(10) DEFAULT 'USD',
+    status VARCHAR(50) DEFAULT 'active',
+    settings JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE
+);
+```
+
+<Info>
+The `slug` field enables subdomain-based routing (e.g., `acme.companyflow.com`) for tenant identification.
+</Info>
+
+### Tenant Metadata
+
+Each company has associated tenant configuration that manages subscription and resource limits:
+
+```sql
+CREATE TABLE tenants (
+    id UUID PRIMARY KEY,
+    company_id UUID NOT NULL UNIQUE,
+    plan_type VARCHAR(50) DEFAULT 'free',
+    subscription_status VARCHAR(50) DEFAULT 'active',
+    max_employees INTEGER DEFAULT 10,
+    storage_used BIGINT DEFAULT 0,
+    settings JSONB DEFAULT '{}',
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+);
+```
+
+**Key Fields:**
+- `plan_type` - Subscription tier (e.g., free, basic, premium)
+- `subscription_status` - Current status (active, suspended, inactive)
+- `max_employees` - Resource limit for employee accounts
+- `storage_used` - Track storage consumption per tenant
+
+## Tenant Isolation
+
+### Data Segregation
+
+All tenant-specific resources include a `company_id` foreign key to enforce data isolation:
+
+- **Employees** - Each employee belongs to one company
+- **Roles** - Custom roles are scoped to a company
+- **Departments** - Organizational structure per tenant
+- **Leaves** - Time-off requests isolated by company
+- **Permissions** - Access controls per company
+
+### JWT Token Scoping
+
+Authentication tokens include the `company_id` claim to enforce tenant boundaries:
+
+```go
+type AuthClaims struct {
+    EmployeeID string `json:"employee_id"`
+    Role       string `json:"role"`
+    CompanyID  string `json:"company_id"`  // Tenant identifier
+    Email      string `json:"email"`
+    // ...
+}
+```
+
+See [Authentication](/concepts/authentication) for details on JWT implementation.
+
+### Request Validation
+
+API handlers validate that the authenticated user's `company_id` matches the requested resource:
+
+```go /home/daytona/workspace/source/handlers/employee_handler.go:293-308
+func parseEmployeeCompanyID(r *http.Request, claims *utils.AuthClaims) (uuid.UUID, error) {
+    companyIDStr := mux.Vars(r)["company_id"]
+    if companyIDStr == "" {
+        companyIDStr = claims.CompanyID
+    }
+
+    companyID, err := uuid.Parse(companyIDStr)
+    if err != nil {
+        return uuid.Nil, err
+    }
+
+    // Enforce tenant boundary
+    if claims.CompanyID != "" && claims.CompanyID != companyID.String() {
+        return uuid.Nil, errors.New("company_id mismatch")
+    }
+
+    return companyID, nil
+}
+```
+
+<Warning>
+Attempting to access resources from a different company will result in a `400 Bad Request` error.
+</Warning>
+
+## Company Status
+
+Companies can have the following status values:
+
+| Status | Description |
+|--------|-------------|
+| `active` | Normal operations, all features available |
+| `suspended` | Temporary access restriction (e.g., payment issue) |
+| `inactive` | Deactivated account, no access permitted |
+
+The authentication system validates company status during login to prevent access to non-active tenants.
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Always Include Company ID" icon="building">
+    Include the `company_id` in API requests or rely on the JWT token to extract it automatically.
+  </Card>
+  
+  <Card title="Validate Tenant Access" icon="shield-check">
+    Never assume cross-tenant access is valid. Always verify the authenticated user belongs to the requested company.
+  </Card>
+  
+  <Card title="Use Cascading Deletes" icon="trash">
+    The schema uses `ON DELETE CASCADE` to ensure complete data cleanup when a company is removed.
+  </Card>
+  
+  <Card title="Monitor Resource Limits" icon="gauge">
+    Check tenant limits (e.g., `max_employees`) before allowing resource creation.
+  </Card>
+</CardGroup>
+
+## Related Concepts
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/concepts/authentication">
+    Learn how JWT tokens enforce tenant isolation
+  </Card>
+  
+  <Card title="Authorization" icon="lock" href="/concepts/authorization">
+    Understand role-based access control per tenant
+  </Card>
+</CardGroup>

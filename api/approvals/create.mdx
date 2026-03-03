@@ -1,0 +1,202 @@
+---
+title: "Create Approval Workflow"
+api: "POST /approval-workflows"
+description: "Create an approval workflow for leave requests, memos, or expenses"
+---
+
+## Overview
+
+Approval workflows define multi-step approval processes for different entity types within your company. Each workflow consists of sequential steps where approvers review and take action on submissions.
+
+<Note>
+  Only users with **Super Admin** or **HR Manager** roles can create approval workflows.
+</Note>
+
+## Request Body
+
+<ParamField body="workflowType" type="string" required>
+  Type of workflow to create. Must be one of:
+  - `leave` - For leave requests
+  - `memo` - For company memos
+  - `expense` - For expense claims
+</ParamField>
+
+<ParamField body="companyId" type="uuid">
+  Company ID for the workflow. If not provided, uses the authenticated user's company ID.
+</ParamField>
+
+<ParamField body="departmentId" type="uuid">
+  Optional department ID to restrict this workflow to a specific department. If null, the workflow applies company-wide.
+</ParamField>
+
+<ParamField body="steps" type="array" required>
+  Array of approval steps. Each step is processed sequentially.
+  
+  Example structure:
+  ```json
+  [
+    {
+      "step": 1,
+      "role_id": "123e4567-e89b-12d3-a456-426614174000",
+      "approver_id": null
+    },
+    {
+      "step": 2,
+      "role_id": "223e4567-e89b-12d3-a456-426614174000"
+    }
+  ]
+  ```
+  
+  - `step` (integer): Step sequence number
+  - `role_id` (uuid): Required role for this approval step
+  - `approver_id` (uuid, optional): Specific approver, or null for any user with the role
+</ParamField>
+
+<ParamField body="isActive" type="boolean" default="true">
+  Whether the workflow is active. Inactive workflows are not used for new submissions.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The created approval workflow object
+  
+  <Expandable title="ApprovalWorkflow properties">
+    <ResponseField name="id" type="uuid">
+      Unique identifier for the workflow
+    </ResponseField>
+    
+    <ResponseField name="companyId" type="uuid">
+      Company ID this workflow belongs to
+    </ResponseField>
+    
+    <ResponseField name="workflowType" type="string">
+      Type of workflow: `leave`, `memo`, or `expense`
+    </ResponseField>
+    
+    <ResponseField name="departmentId" type="uuid">
+      Department ID if department-specific, null if company-wide
+    </ResponseField>
+    
+    <ResponseField name="steps" type="array">
+      Array of approval steps in sequential order
+    </ResponseField>
+    
+    <ResponseField name="isActive" type="boolean">
+      Whether this workflow is currently active
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="timestamp">
+      When the workflow was created
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://api.companyflow.com/approval-workflows \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflowType": "leave",
+    "departmentId": "123e4567-e89b-12d3-a456-426614174000",
+    "steps": [
+      {
+        "step": 1,
+        "role_id": "manager-role-id",
+        "approver_id": null
+      },
+      {
+        "step": 2,
+        "role_id": "hr-manager-role-id",
+        "approver_id": null
+      }
+    ],
+    "isActive": true
+  }'
+```
+
+<RequestExample>
+```json
+{
+  "workflowType": "leave",
+  "departmentId": "123e4567-e89b-12d3-a456-426614174000",
+  "steps": [
+    {
+      "step": 1,
+      "role_id": "456e4567-e89b-12d3-a456-426614174000",
+      "approver_id": null
+    },
+    {
+      "step": 2,
+      "role_id": "789e4567-e89b-12d3-a456-426614174000"
+    }
+  ],
+  "isActive": true
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "id": "987e4567-e89b-12d3-a456-426614174000",
+    "companyId": "111e4567-e89b-12d3-a456-426614174000",
+    "workflowType": "leave",
+    "departmentId": "123e4567-e89b-12d3-a456-426614174000",
+    "steps": [
+      {
+        "step": 1,
+        "role_id": "456e4567-e89b-12d3-a456-426614174000",
+        "approver_id": null
+      },
+      {
+        "step": 2,
+        "role_id": "789e4567-e89b-12d3-a456-426614174000"
+      }
+    ],
+    "isActive": true,
+    "createdAt": "2026-03-03T10:30:00Z"
+  }
+}
+```
+</ResponseExample>
+
+## Workflow Design Best Practices
+
+<AccordionGroup>
+  <Accordion title="Sequential vs Parallel Approvals">
+    Currently, approval workflows are sequential - each step must be completed before the next begins. Design your steps accordingly, with the most critical approver first.
+  </Accordion>
+  
+  <Accordion title="Department-Specific vs Company-Wide">
+    - **Department-specific workflows**: Use when different departments have different approval requirements
+    - **Company-wide workflows**: Leave `departmentId` as null to apply the same workflow across all departments
+  </Accordion>
+  
+  <Accordion title="Role-Based vs Specific Approvers">
+    - Set `approver_id` to null to allow any user with the specified role to approve
+    - Set a specific `approver_id` to require approval from a particular person
+  </Accordion>
+</AccordionGroup>
+
+## Error Responses
+
+<ResponseField name="400 Bad Request">
+  Invalid request body or workflow configuration
+</ResponseField>
+
+<ResponseField name="401 Unauthorized">
+  Missing or invalid authentication token, or insufficient permissions
+</ResponseField>
+
+<ResponseField name="500 Internal Server Error">
+  Server error while creating the workflow
+</ResponseField>

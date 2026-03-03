@@ -1,0 +1,161 @@
+---
+title: 'Update Department'
+api: 'PUT/PATCH /departments/{id}'
+description: 'Update an existing department'
+---
+
+## Authentication
+
+This endpoint requires authentication with a Bearer token. Only users with **Super Admin** or **HR Manager** roles can update departments.
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the department to update
+</ParamField>
+
+## Request Body
+
+All fields are optional. Only include fields you want to update.
+
+<ParamField body="name" type="string">
+  Department name (2-255 characters)
+</ParamField>
+
+<ParamField body="code" type="string">
+  Department code (max 50 characters)
+</ParamField>
+
+<ParamField body="description" type="string">
+  Department description
+</ParamField>
+
+<ParamField body="parent_department_id" type="string">
+  UUID of the parent department for hierarchical structure
+</ParamField>
+
+<ParamField body="cost_center" type="string">
+  Cost center identifier (max 100 characters)
+</ParamField>
+
+<ParamField body="status" type="string">
+  Department status. Must be one of: `active`, `inactive`
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The updated department object
+  
+  <Expandable title="Department Object">
+    <ResponseField name="id" type="string">
+      Unique department identifier
+    </ResponseField>
+    
+    <ResponseField name="company_id" type="string">
+      Company identifier
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Department name
+    </ResponseField>
+    
+    <ResponseField name="code" type="string">
+      Department code
+    </ResponseField>
+    
+    <ResponseField name="description" type="string">
+      Department description
+    </ResponseField>
+    
+    <ResponseField name="parent_department_id" type="string" nullable>
+      Parent department ID if hierarchical
+    </ResponseField>
+    
+    <ResponseField name="cost_center" type="string">
+      Cost center identifier
+    </ResponseField>
+    
+    <ResponseField name="status" type="string">
+      Department status (active/inactive)
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of creation
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of last update
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL (PUT)
+curl -X PUT https://api.companyflow.com/departments/{id} \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Software Engineering",
+    "description": "Software development and engineering team",
+    "status": "active"
+  }'
+```
+
+```bash cURL (PATCH)
+curl -X PATCH https://api.companyflow.com/departments/{id} \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "inactive"
+  }'
+```
+
+```json Request Body
+{
+  "name": "Software Engineering",
+  "description": "Software development and engineering team",
+  "status": "active"
+}
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200 - Success
+{
+  "success": true,
+  "data": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "company_id": "987fcdeb-51a2-43f7-9c5d-123456789abc",
+    "name": "Software Engineering",
+    "code": "ENG",
+    "description": "Software development and engineering team",
+    "parent_department_id": null,
+    "cost_center": "CC-100",
+    "status": "active",
+    "created_at": "2026-03-03T10:00:00Z",
+    "updated_at": "2026-03-03T14:30:00Z"
+  }
+}
+```
+
+```json 400 - Bad Request
+{
+  "success": false,
+  "message": "invalid request body"
+}
+```
+
+```json 401 - Unauthorized
+{
+  "success": false,
+  "message": "insufficient role"
+}
+```
+
+</ResponseExample>

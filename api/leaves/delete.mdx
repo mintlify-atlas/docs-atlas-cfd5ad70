@@ -1,0 +1,299 @@
+---
+title: 'Delete Leave Type'
+api: 'DELETE /leave-types/{id}'
+description: 'Remove a leave type from the system'
+---
+
+## Overview
+
+Delete a leave type configuration. This is an administrative operation typically performed by HR managers. Leave types can only be deleted if they have no associated leave requests or balances.
+
+<Warning>
+  Deleting a leave type is permanent and cannot be undone. Ensure the leave type is not in use before deletion.
+</Warning>
+
+## Authentication
+
+Requires authentication with Bearer token. Available to:
+- SuperAdmin
+- HR Manager
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the leave type to delete
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the deletion was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message: "leave type deleted"
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE https://api.companyflow.com/leave-types/123e4567-e89b-12d3-a456-426614174000 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```javascript JavaScript
+const leaveTypeId = '123e4567-e89b-12d3-a456-426614174000';
+
+const response = await fetch(
+  `https://api.companyflow.com/leave-types/${leaveTypeId}`,
+  {
+    method: 'DELETE',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN'
+    }
+  }
+);
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+leave_type_id = '123e4567-e89b-12d3-a456-426614174000'
+url = f'https://api.companyflow.com/leave-types/{leave_type_id}'
+headers = {'Authorization': 'Bearer YOUR_TOKEN'}
+
+response = requests.delete(url, headers=headers)
+data = response.json()
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "message": "leave type deleted"
+}
+```
+</ResponseExample>
+
+## Leave type management
+
+Before deleting, you can manage leave types using these operations:
+
+### Create leave type
+
+`POST /companies/{company_id}/leave-types`
+
+Create a new leave type with configuration for days allowed, paid status, documentation requirements, and carry-forward rules.
+
+**Request body example:**
+
+```json
+{
+  "name": "Annual Leave",
+  "code": "AL",
+  "description": "Standard annual vacation leave",
+  "daysAllowed": 20,
+  "isPaid": true,
+  "requiresDocumentation": false,
+  "carryForwardAllowed": true,
+  "maxCarryForwardDays": 5,
+  "colorCode": "#3498db",
+  "status": "active"
+}
+```
+
+### Update leave type
+
+`PUT /leave-types/{id}` or `PATCH /leave-types/{id}`
+
+Modify an existing leave type's configuration.
+
+**Request body example:**
+
+```json
+{
+  "daysAllowed": 22,
+  "maxCarryForwardDays": 7,
+  "status": "active"
+}
+```
+
+### List leave types
+
+`GET /companies/{company_id}/leave-types`
+
+Retrieve all leave types for a company with filtering and pagination.
+
+**Query parameters:**
+- `page` - Page number (default: 1)
+- `pageSize` - Items per page (default: 10)
+- `status` - Filter by status (active/inactive)
+- `search` - Search by name or code
+
+### Get leave type
+
+`GET /leave-types/{id}`
+
+Retrieve details of a specific leave type including all configuration settings.
+
+## Deletion constraints
+
+The system enforces these rules when deleting leave types:
+
+<AccordionGroup>
+  <Accordion title="No active leave requests">
+    Cannot delete if employees have pending or approved leave requests using this leave type. All requests must be completed, rejected, or withdrawn.
+  </Accordion>
+  
+  <Accordion title="No leave balances">
+    Cannot delete if employees have leave balances (used or available) for this leave type. Balances must be transferred or zeroed out first.
+  </Accordion>
+  
+  <Accordion title="Company ownership">
+    Leave types can only be deleted by administrators of the company that owns them.
+  </Accordion>
+</AccordionGroup>
+
+## Alternative: Deactivate instead
+
+<Tip>
+  Instead of deleting, consider deactivating the leave type by setting its status to `inactive`. This:
+  
+  - Preserves historical data and reports
+  - Prevents new leave requests using this type
+  - Allows reactivation if needed
+  - Maintains data integrity for past requests
+</Tip>
+
+**Deactivate a leave type:**
+
+```bash
+curl -X PATCH https://api.companyflow.com/leave-types/123e4567-e89b-12d3-a456-426614174000 \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "inactive"}'
+```
+
+## Common leave type configurations
+
+Reference for standard leave type setups:
+
+<Tabs>
+  <Tab title="Annual Leave">
+    ```json
+    {
+      "name": "Annual Leave",
+      "code": "AL",
+      "daysAllowed": 20,
+      "isPaid": true,
+      "requiresDocumentation": false,
+      "carryForwardAllowed": true,
+      "maxCarryForwardDays": 5,
+      "colorCode": "#3498db",
+      "status": "active"
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Sick Leave">
+    ```json
+    {
+      "name": "Sick Leave",
+      "code": "SL",
+      "daysAllowed": 10,
+      "isPaid": true,
+      "requiresDocumentation": true,
+      "carryForwardAllowed": false,
+      "maxCarryForwardDays": 0,
+      "colorCode": "#e74c3c",
+      "status": "active"
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Unpaid Leave">
+    ```json
+    {
+      "name": "Unpaid Leave",
+      "code": "UL",
+      "daysAllowed": 30,
+      "isPaid": false,
+      "requiresDocumentation": false,
+      "carryForwardAllowed": false,
+      "maxCarryForwardDays": 0,
+      "colorCode": "#95a5a6",
+      "status": "active"
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Maternity Leave">
+    ```json
+    {
+      "name": "Maternity Leave",
+      "code": "ML",
+      "daysAllowed": 90,
+      "isPaid": true,
+      "requiresDocumentation": true,
+      "carryForwardAllowed": false,
+      "maxCarryForwardDays": 0,
+      "colorCode": "#9b59b6",
+      "status": "active"
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Error responses
+
+<ResponseExample>
+```json Leave type in use
+{
+  "success": false,
+  "message": "cannot delete leave type with existing leave requests or balances"
+}
+```
+
+```json Not found
+{
+  "success": false,
+  "message": "leave type not found"
+}
+```
+
+```json Unauthorized
+{
+  "success": false,
+  "message": "unauthorized"
+}
+```
+
+```json Invalid ID
+{
+  "success": false,
+  "message": "invalid leave type id"
+}
+```
+</ResponseExample>
+
+## Related endpoints
+
+<CardGroup cols={2}>
+  <Card title="Create leave type" icon="plus">
+    Add a new leave type configuration for your company
+  </Card>
+  
+  <Card title="Update leave type" icon="pen">
+    Modify leave type settings and allowances
+  </Card>
+  
+  <Card title="List leave types" icon="list">
+    View all configured leave types
+  </Card>
+  
+  <Card title="Check balances" icon="scale-balanced">
+    View employee leave balances by type
+  </Card>
+</CardGroup>

@@ -1,0 +1,229 @@
+---
+title: 'List Memos'
+description: 'Retrieve a paginated list of memos with filtering options'
+---
+
+## Endpoint
+
+```
+GET /memos
+```
+
+## Description
+
+Retrieve a paginated list of memos for the authenticated user's company. Supports filtering by employee, status, and memo type.
+
+## Authentication
+
+Requires Bearer token authentication. Accessible by:
+- Employee
+- Manager
+- HR Manager
+- Super Admin
+
+## Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="pageSize" type="integer" default="10">
+  Number of memos per page
+</ParamField>
+
+<ParamField query="employeeId" type="string">
+  Filter memos by employee UUID (creator of the memo)
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by memo status. Valid values:
+  - `draft`
+  - `pending`
+  - `approved`
+  - `rejected`
+  - `archived`
+</ParamField>
+
+<ParamField query="memoType" type="string">
+  Filter by memo type. Valid values:
+  - `request`
+  - `disciplinary`
+  - `announcement`
+  - `general`
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Paginated memo list
+
+  <Expandable title="Pagination Data">
+    <ResponseField name="memos" type="array">
+      Array of memo objects
+
+      <Expandable title="Memo Object">
+        <ResponseField name="id" type="string">
+          Unique memo identifier (UUID)
+        </ResponseField>
+
+        <ResponseField name="companyId" type="string">
+          Company UUID
+        </ResponseField>
+
+        <ResponseField name="employeeId" type="string">
+          UUID of the employee who created the memo
+        </ResponseField>
+
+        <ResponseField name="memoType" type="string">
+          Type of memo (request, disciplinary, announcement, general)
+        </ResponseField>
+
+        <ResponseField name="title" type="string">
+          Memo title
+        </ResponseField>
+
+        <ResponseField name="content" type="string">
+          Full memo content
+        </ResponseField>
+
+        <ResponseField name="referenceNumber" type="string">
+          Reference number for tracking
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+          Current memo status
+        </ResponseField>
+
+        <ResponseField name="currentStep" type="integer">
+          Current approval workflow step
+        </ResponseField>
+
+        <ResponseField name="priority" type="string">
+          Priority level (low, normal, high, urgent)
+        </ResponseField>
+
+        <ResponseField name="createdAt" type="string">
+          ISO 8601 timestamp of creation
+        </ResponseField>
+
+        <ResponseField name="updatedAt" type="string">
+          ISO 8601 timestamp of last update
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="page" type="integer">
+      Current page number
+    </ResponseField>
+
+    <ResponseField name="pageSize" type="integer">
+      Number of items per page
+    </ResponseField>
+
+    <ResponseField name="total" type="integer">
+      Total number of memos matching the filters
+    </ResponseField>
+
+    <ResponseField name="totalPages" type="integer">
+      Total number of pages
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+GET /memos?page=1&pageSize=20&status=pending&memoType=request
+```
+
+## Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "memos": [
+      {
+        "id": "123e4567-e89b-12d3-a456-426614174000",
+        "companyId": "550e8400-e29b-41d4-a716-446655440000",
+        "employeeId": "660e8400-e29b-41d4-a716-446655440000",
+        "memoType": "request",
+        "title": "Request for Additional Resources",
+        "content": "We require additional development resources for the Q2 project.",
+        "referenceNumber": "REQ-2024-001",
+        "status": "pending",
+        "currentStep": 1,
+        "priority": "high",
+        "createdAt": "2024-03-03T10:30:00Z",
+        "updatedAt": "2024-03-03T10:30:00Z"
+      },
+      {
+        "id": "223e4567-e89b-12d3-a456-426614174001",
+        "companyId": "550e8400-e29b-41d4-a716-446655440000",
+        "employeeId": "770e8400-e29b-41d4-a716-446655440001",
+        "memoType": "request",
+        "title": "Equipment Upgrade Request",
+        "content": "Request for new laptops for the design team.",
+        "referenceNumber": "REQ-2024-002",
+        "status": "pending",
+        "currentStep": 2,
+        "priority": "normal",
+        "createdAt": "2024-03-02T14:20:00Z",
+        "updatedAt": "2024-03-03T09:15:00Z"
+      }
+    ],
+    "page": 1,
+    "pageSize": 20,
+    "total": 2,
+    "totalPages": 1
+  }
+}
+```
+
+## Status Codes
+
+<ResponseField name="200" type="OK">
+  Memos retrieved successfully
+</ResponseField>
+
+<ResponseField name="400" type="Bad Request">
+  Invalid query parameters
+</ResponseField>
+
+<ResponseField name="401" type="Unauthorized">
+  Missing or invalid authentication token
+</ResponseField>
+
+<ResponseField name="500" type="Internal Server Error">
+  Server error occurred
+</ResponseField>
+
+## Filtering Examples
+
+<CodeGroup>
+
+```bash Get all pending memos
+GET /memos?status=pending
+```
+
+```bash Get memos by specific employee
+GET /memos?employeeId=660e8400-e29b-41d4-a716-446655440000
+```
+
+```bash Get urgent announcements
+GET /memos?memoType=announcement&priority=urgent
+```
+
+```bash Paginate through approved memos
+GET /memos?status=approved&page=2&pageSize=50
+```
+
+</CodeGroup>
+
+<Tip>
+  Combine multiple filters to narrow down results. For example, filter by both `status=pending` and `memoType=request` to see all pending request memos.
+</Tip>

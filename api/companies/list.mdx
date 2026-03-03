@@ -1,0 +1,230 @@
+---
+title: 'List Companies'
+api: 'GET /companies'
+---
+
+Retrieve a paginated list of companies with optional filtering by status and search.
+
+## Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="page_size" type="integer" default="10">
+  Number of items per page
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by company status. One of: `active`, `suspended`, `inactive`
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search companies by name or slug
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Paginated company results
+  
+  <ResponseField name="data.items" type="array">
+    Array of company objects
+    
+    <ResponseField name="data.items[].id" type="string">
+      Company UUID
+    </ResponseField>
+    
+    <ResponseField name="data.items[].name" type="string">
+      Company name
+    </ResponseField>
+    
+    <ResponseField name="data.items[].slug" type="string">
+      Company slug identifier
+    </ResponseField>
+    
+    <ResponseField name="data.items[].industry" type="string">
+      Industry sector
+    </ResponseField>
+    
+    <ResponseField name="data.items[].country" type="string">
+      Country location
+    </ResponseField>
+    
+    <ResponseField name="data.items[].timezone" type="string">
+      Timezone identifier
+    </ResponseField>
+    
+    <ResponseField name="data.items[].currency" type="string">
+      Currency code
+    </ResponseField>
+    
+    <ResponseField name="data.items[].registration_number" type="string">
+      Registration number
+    </ResponseField>
+    
+    <ResponseField name="data.items[].tax_id" type="string">
+      Tax identification
+    </ResponseField>
+    
+    <ResponseField name="data.items[].address" type="string">
+      Physical address
+    </ResponseField>
+    
+    <ResponseField name="data.items[].phone" type="string">
+      Contact phone
+    </ResponseField>
+    
+    <ResponseField name="data.items[].logo_url" type="string">
+      Logo URL
+    </ResponseField>
+    
+    <ResponseField name="data.items[].status" type="string">
+      Company status
+    </ResponseField>
+    
+    <ResponseField name="data.items[].settings" type="object">
+      Company settings (JSON)
+    </ResponseField>
+    
+    <ResponseField name="data.items[].created_at" type="string">
+      Creation timestamp (ISO 8601)
+    </ResponseField>
+    
+    <ResponseField name="data.items[].updated_at" type="string">
+      Last update timestamp (ISO 8601)
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="data.total" type="integer">
+    Total number of companies matching the criteria
+  </ResponseField>
+  
+  <ResponseField name="data.page" type="integer">
+    Current page number
+  </ResponseField>
+  
+  <ResponseField name="data.page_size" type="integer">
+    Items per page
+  </ResponseField>
+  
+  <ResponseField name="data.total_pages" type="integer">
+    Total number of pages
+  </ResponseField>
+</ResponseField>
+
+## Request Examples
+
+<Tabs>
+  <Tab title="Basic">
+    ```bash cURL
+    curl -X GET https://api.companyflow.com/companies \
+      -H "Authorization: Bearer YOUR_JWT_TOKEN"
+    ```
+  </Tab>
+  
+  <Tab title="With Pagination">
+    ```bash cURL
+    curl -X GET "https://api.companyflow.com/companies?page=2&page_size=20" \
+      -H "Authorization: Bearer YOUR_JWT_TOKEN"
+    ```
+  </Tab>
+  
+  <Tab title="Filter by Status">
+    ```bash cURL
+    curl -X GET "https://api.companyflow.com/companies?status=active" \
+      -H "Authorization: Bearer YOUR_JWT_TOKEN"
+    ```
+  </Tab>
+  
+  <Tab title="Search">
+    ```bash cURL
+    curl -X GET "https://api.companyflow.com/companies?search=acme" \
+      -H "Authorization: Bearer YOUR_JWT_TOKEN"
+    ```
+  </Tab>
+  
+  <Tab title="Combined Filters">
+    ```bash cURL
+    curl -X GET "https://api.companyflow.com/companies?page=1&page_size=10&status=active&search=tech" \
+      -H "Authorization: Bearer YOUR_JWT_TOKEN"
+    ```
+  </Tab>
+</Tabs>
+
+## Response Example
+
+```json 200 OK
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "123e4567-e89b-12d3-a456-426614174000",
+        "name": "Acme Corporation",
+        "slug": "acme-corp",
+        "industry": "Technology",
+        "country": "United States",
+        "timezone": "America/New_York",
+        "currency": "USD",
+        "registration_number": "123456789",
+        "tax_id": "98-7654321",
+        "address": "123 Main St, New York, NY 10001",
+        "phone": "+1-555-0100",
+        "logo_url": "",
+        "status": "active",
+        "settings": null,
+        "created_at": "2026-03-03T10:00:00Z",
+        "updated_at": "2026-03-03T10:00:00Z"
+      },
+      {
+        "id": "223e4567-e89b-12d3-a456-426614174001",
+        "name": "TechStart Inc",
+        "slug": "techstart",
+        "industry": "Software",
+        "country": "Canada",
+        "timezone": "America/Toronto",
+        "currency": "CAD",
+        "registration_number": "987654321",
+        "tax_id": "12-3456789",
+        "address": "456 Tech Ave, Toronto, ON M5H 2N2",
+        "phone": "+1-416-555-0200",
+        "logo_url": "https://example.com/logo.png",
+        "status": "active",
+        "settings": null,
+        "created_at": "2026-03-02T15:30:00Z",
+        "updated_at": "2026-03-02T15:30:00Z"
+      }
+    ],
+    "total": 42,
+    "page": 1,
+    "page_size": 10,
+    "total_pages": 5
+  }
+}
+```
+
+```json 400 Bad Request
+{
+  "success": false,
+  "message": "invalid page"
+}
+```
+
+```json 500 Internal Server Error
+{
+  "success": false,
+  "message": "internal server error"
+}
+```
+
+## Error Responses
+
+| Status Code | Description |
+|-------------|-------------|
+| 400 | Invalid page or page_size parameter |
+| 500 | Internal server error |

@@ -1,0 +1,235 @@
+---
+title: 'Update Company'
+api: 'PUT /companies/{id}'
+---
+
+Update an existing company's information. Supports both PUT and PATCH methods. All fields are optional.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Company UUID
+</ParamField>
+
+## Request Body
+
+All fields are optional. Only include fields you want to update.
+
+<ParamField body="name" type="string">
+  Company name (2-255 characters)
+</ParamField>
+
+<ParamField body="slug" type="string">
+  Unique company identifier (2-255 characters)
+</ParamField>
+
+<ParamField body="industry" type="string">
+  Industry sector (max 100 characters)
+</ParamField>
+
+<ParamField body="country" type="string">
+  Country location (max 100 characters)
+</ParamField>
+
+<ParamField body="timezone" type="string">
+  Timezone identifier (max 50 characters)
+</ParamField>
+
+<ParamField body="currency" type="string">
+  Currency code (max 10 characters)
+</ParamField>
+
+<ParamField body="registration_number" type="string">
+  Business registration number (max 100 characters)
+</ParamField>
+
+<ParamField body="tax_id" type="string">
+  Tax identification number (max 100 characters)
+</ParamField>
+
+<ParamField body="address" type="string">
+  Physical address
+</ParamField>
+
+<ParamField body="phone" type="string">
+  Contact phone number (max 100 characters)
+</ParamField>
+
+<ParamField body="logo_url" type="string">
+  URL to company logo
+</ParamField>
+
+<ParamField body="status" type="string">
+  Company status. One of: `active`, `suspended`, `inactive`
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The updated company object
+  
+  <ResponseField name="data.id" type="string">
+    Company UUID
+  </ResponseField>
+  
+  <ResponseField name="data.name" type="string">
+    Company name
+  </ResponseField>
+  
+  <ResponseField name="data.slug" type="string">
+    Company slug identifier
+  </ResponseField>
+  
+  <ResponseField name="data.industry" type="string">
+    Industry sector
+  </ResponseField>
+  
+  <ResponseField name="data.country" type="string">
+    Country location
+  </ResponseField>
+  
+  <ResponseField name="data.timezone" type="string">
+    Timezone identifier
+  </ResponseField>
+  
+  <ResponseField name="data.currency" type="string">
+    Currency code
+  </ResponseField>
+  
+  <ResponseField name="data.registration_number" type="string">
+    Registration number
+  </ResponseField>
+  
+  <ResponseField name="data.tax_id" type="string">
+    Tax identification
+  </ResponseField>
+  
+  <ResponseField name="data.address" type="string">
+    Physical address
+  </ResponseField>
+  
+  <ResponseField name="data.phone" type="string">
+    Contact phone
+  </ResponseField>
+  
+  <ResponseField name="data.logo_url" type="string">
+    Logo URL
+  </ResponseField>
+  
+  <ResponseField name="data.status" type="string">
+    Company status
+  </ResponseField>
+  
+  <ResponseField name="data.settings" type="object">
+    Company settings (JSON)
+  </ResponseField>
+  
+  <ResponseField name="data.created_at" type="string">
+    Creation timestamp (ISO 8601)
+  </ResponseField>
+  
+  <ResponseField name="data.updated_at" type="string">
+    Last update timestamp (ISO 8601)
+  </ResponseField>
+</ResponseField>
+
+## Request Examples
+
+<Tabs>
+  <Tab title="PUT">
+    ```bash cURL
+    curl -X PUT https://api.companyflow.com/companies/123e4567-e89b-12d3-a456-426614174000 \
+      -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "name": "Acme Corporation Ltd",
+        "industry": "Technology & Software",
+        "phone": "+1-555-0199"
+      }'
+    ```
+  </Tab>
+  
+  <Tab title="PATCH">
+    ```bash cURL
+    curl -X PATCH https://api.companyflow.com/companies/123e4567-e89b-12d3-a456-426614174000 \
+      -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "status": "suspended"
+      }'
+    ```
+  </Tab>
+  
+  <Tab title="Update Multiple Fields">
+    ```bash cURL
+    curl -X PUT https://api.companyflow.com/companies/123e4567-e89b-12d3-a456-426614174000 \
+      -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "name": "Acme Global Corporation",
+        "address": "456 New Address, New York, NY 10002",
+        "phone": "+1-555-0200",
+        "logo_url": "https://cdn.example.com/new-logo.png",
+        "timezone": "America/Los_Angeles"
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+## Response Example
+
+```json 200 OK
+{
+  "success": true,
+  "data": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "name": "Acme Corporation Ltd",
+    "slug": "acme-corp",
+    "industry": "Technology & Software",
+    "country": "United States",
+    "timezone": "America/New_York",
+    "currency": "USD",
+    "registration_number": "123456789",
+    "tax_id": "98-7654321",
+    "address": "123 Main St, New York, NY 10001",
+    "phone": "+1-555-0199",
+    "logo_url": "https://example.com/logo.png",
+    "status": "active",
+    "settings": null,
+    "created_at": "2026-03-03T10:00:00Z",
+    "updated_at": "2026-03-03T14:30:00Z"
+  }
+}
+```
+
+```json 400 Bad Request
+{
+  "success": false,
+  "message": "invalid company id"
+}
+```
+
+```json 400 Validation Error
+{
+  "success": false,
+  "message": "invalid request body"
+}
+```
+
+```json 500 Internal Server Error
+{
+  "success": false,
+  "message": "internal server error"
+}
+```
+
+## Error Responses
+
+| Status Code | Description |
+|-------------|-------------|
+| 400 | Invalid company ID format or invalid request body |
+| 500 | Internal server error |

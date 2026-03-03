@@ -1,80 +1,208 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start
+description: Get started with CompanyFlow API in minutes
 ---
 
-## Get started in three steps
-
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+This guide will walk you through making your first API calls to CompanyFlow. You'll learn how to authenticate and interact with the API endpoints.
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  Make sure you have CompanyFlow running locally or have access to a deployed instance. See the [Installation guide](/installation) if you need to set up the server first.
 </Note>
+
+## Step 1: Verify the Server is Running
+
+First, check that the CompanyFlow server is healthy and accessible:
+
+```bash
+curl http://localhost:8080/health
+```
+
+You should receive an `ok` response. The server runs on port 8080 by default, or the port specified in your `PORT` environment variable.
+
+## Step 2: Explore the API Documentation
+
+CompanyFlow provides interactive Swagger documentation. Open your browser and navigate to:
+
+```
+http://localhost:8080/swagger/index.html
+```
+
+This interactive interface allows you to explore all available endpoints, view request/response schemas, and even test API calls directly from your browser.
+
+## Step 3: Authenticate
+
+All protected endpoints in CompanyFlow require JWT authentication. To get started, you'll need to log in with valid employee credentials.
+
+### Login Request
+
+The login endpoint is located at `/auth/login` and accepts the following payload:
+
+```bash
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@company.com",
+    "password": "your_password"
+  }'
+```
+
+### Login Response
+
+On successful authentication, you'll receive a response containing:
+
+```json
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "role": "admin",
+    "employee": {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "user@company.com",
+      "company_id": "660e8400-e29b-41d4-a716-446655440000"
+    },
+    "company": {
+      "id": "660e8400-e29b-41d4-a716-446655440000",
+      "name": "Acme Corporation",
+      "slug": "acme-corp"
+    }
+  }
+}
+```
+
+<Warning>
+  Store the JWT token securely. Never commit tokens to version control or expose them in client-side code.
+</Warning>
+
+The response includes:
+- `token`: JWT token for authenticating subsequent requests
+- `role`: The employee's role in the system
+- `employee`: Basic employee profile information
+- `company`: The company (tenant) the employee belongs to
+
+## Step 4: Make an Authenticated Request
+
+Now that you have a JWT token, you can make authenticated requests to protected endpoints. Include the token in the `Authorization` header with the `Bearer` prefix.
+
+### Example: Get Company Information
+
+```bash
+curl -X GET http://localhost:8080/companies/660e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "660e8400-e29b-41d4-a716-446655440000",
+    "name": "Acme Corporation",
+    "slug": "acme-corp",
+    "email": "contact@acmecorp.com",
+    "phone": "+1-555-0123",
+    "address": "123 Business St, City, State 12345",
+    "status": "active",
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+## Step 5: List Companies with Pagination
+
+CompanyFlow supports pagination for list endpoints. Here's how to retrieve a paginated list of companies:
+
+```bash
+curl -X GET "http://localhost:8080/companies?page=1&page_size=10" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+### Query Parameters
+
+- `page`: Page number (default: 1)
+- `page_size`: Number of items per page (default: 10)
+- `status`: Filter by company status (optional)
+- `search`: Search by company name or slug (optional)
+
+### Paginated Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "660e8400-e29b-41d4-a716-446655440000",
+        "name": "Acme Corporation",
+        "slug": "acme-corp",
+        "status": "active"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "page_size": 10,
+      "total_items": 1,
+      "total_pages": 1
+    }
+  }
+}
+```
+
+## Common API Response Structure
+
+All CompanyFlow API responses follow a consistent structure:
+
+### Success Response
+
+```json
+{
+  "success": true,
+  "data": { /* response data */ },
+  "message": "optional success message"
+}
+```
+
+### Error Response
+
+```json
+{
+  "success": false,
+  "error": "Error message describing what went wrong"
+}
+```
+
+## HTTP Status Codes
+
+CompanyFlow uses standard HTTP status codes:
+
+- `200 OK`: Request succeeded
+- `201 Created`: Resource created successfully
+- `400 Bad Request`: Invalid request body or parameters
+- `401 Unauthorized`: Missing or invalid authentication token
+- `404 Not Found`: Resource not found
+- `500 Internal Server Error`: Server error occurred
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication Guide" icon="shield" href="/concepts/authentication">
+    Learn more about JWT authentication and security
+  </Card>
+  <Card title="API Reference" icon="book" href="/api/auth/login">
+    Explore all available endpoints and their schemas
+  </Card>
+  <Card title="Employee Management" icon="users" href="/api/employees/create">
+    Manage employee records and bulk uploads
+  </Card>
+  <Card title="Leave Management" icon="calendar" href="/api/leaves/create">
+    Handle leave requests and approvals
+  </Card>
+</CardGroup>
+
+<Tip>
+  Use the interactive Swagger UI at `http://localhost:8080/swagger/index.html` to test endpoints without writing code. It includes authentication support and request validation.
+</Tip>

@@ -1,0 +1,334 @@
+---
+title: 'Environment Configuration'
+description: 'Configure environment variables for CompanyFlow API'
+---
+
+## Overview
+
+CompanyFlow uses environment variables for configuration. The application loads variables from a `.env` file in development and from system environment variables in production.
+
+## Configuration Loading
+
+The application uses `godotenv` to load the `.env` file. From `config/config.go:15`:
+
+```go
+if err := godotenv.Load(); err != nil {
+    log.Println("No .env file found, using environment variables")
+}
+```
+
+<Note>
+  If no `.env` file is found, the application will use system environment variables. This is the recommended approach for production deployments.
+</Note>
+
+## Required Environment Variables
+
+<Steps>
+  <Step title="Create .env File">
+    Create a `.env` file in the root directory of your project:
+
+    ```bash
+    touch .env
+    ```
+
+    <Warning>
+      Never commit your `.env` file to version control. Add it to `.gitignore` to prevent accidental commits.
+    </Warning>
+  </Step>
+
+  <Step title="Configure Database Variables">
+    Add your PostgreSQL database configuration:
+
+    ```env .env
+    DB_HOST=localhost
+    DB_PORT=5432
+    DB_USER=your_database_user
+    DB_PASSWORD=your_database_password
+    DB_NAME=companyflow
+    DB_SSLMODE=disable
+    ```
+
+    <ParamField path="DB_HOST" type="string" required>
+      PostgreSQL server hostname or IP address
+    </ParamField>
+
+    <ParamField path="DB_PORT" type="string" required>
+      PostgreSQL server port (default: 5432)
+    </ParamField>
+
+    <ParamField path="DB_USER" type="string" required>
+      Database user with access to the CompanyFlow database
+    </ParamField>
+
+    <ParamField path="DB_PASSWORD" type="string" required>
+      Password for the database user
+    </ParamField>
+
+    <ParamField path="DB_NAME" type="string" required>
+      Name of the database (default: companyflow)
+    </ParamField>
+
+    <ParamField path="DB_SSLMODE" type="string" required>
+      SSL mode for database connection. Options: `disable`, `require`, `verify-ca`, `verify-full`
+    </ParamField>
+  </Step>
+
+  <Step title="Configure Server Variables">
+    Add server configuration:
+
+    ```env .env
+    PORT=8080
+    CORS_ORIGIN=http://localhost:3000
+    ```
+
+    <ParamField path="PORT" type="string" default="8080">
+      Port number for the HTTP server
+    </ParamField>
+
+    <ParamField path="CORS_ORIGIN" type="string" default="http://localhost:3000">
+      Allowed origin for CORS requests. Set to your frontend application URL.
+    </ParamField>
+  </Step>
+
+  <Step title="Configure Authentication">
+    Add JWT secret for authentication:
+
+    ```env .env
+    JWT_SECRET=your_jwt_secret_key
+    ```
+
+    <ParamField path="JWT_SECRET" type="string" required>
+      Secret key for signing JWT tokens. Use a strong, random string.
+    </ParamField>
+
+    <Warning>
+      Generate a secure JWT secret using a cryptographically secure random generator. Never use simple strings like "secret" or "password".
+    </Warning>
+
+    Generate a secure JWT secret:
+
+    <CodeGroup>
+      ```bash OpenSSL
+      openssl rand -base64 64
+      ```
+
+      ```bash Node.js
+      node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
+      ```
+
+      ```python Python
+      python -c "import secrets; print(secrets.token_urlsafe(64))"
+      ```
+    </CodeGroup>
+  </Step>
+</Steps>
+
+## Complete Configuration Example
+
+Here's a complete `.env` file example:
+
+<CodeGroup>
+  ```env Development
+  # Database Configuration
+  DB_HOST=localhost
+  DB_PORT=5432
+  DB_USER=companyflow_user
+  DB_PASSWORD=dev_password_123
+  DB_NAME=companyflow
+  DB_SSLMODE=disable
+  
+  # Server Configuration
+  PORT=8080
+  CORS_ORIGIN=http://localhost:3000
+  
+  # Authentication
+  JWT_SECRET=your_generated_secret_key_here
+  ```
+
+  ```env Production
+  # Database Configuration
+  DB_HOST=your-production-db-host.com
+  DB_PORT=5432
+  DB_USER=companyflow_prod
+  DB_PASSWORD=strong_production_password
+  DB_NAME=companyflow_prod
+  DB_SSLMODE=require
+  
+  # Server Configuration
+  PORT=8080
+  CORS_ORIGIN=https://your-frontend-domain.com
+  
+  # Authentication
+  JWT_SECRET=your_secure_production_jwt_secret
+  ```
+</CodeGroup>
+
+## Environment Variable Validation
+
+CompanyFlow validates required environment variables at startup. From `config/config.go:50`:
+
+```go
+func mustGetEnv(key string) string {
+    value := os.Getenv(key)
+    if value == "" {
+        log.Fatalf("Missing required environment variable: %s", key)
+    }
+    return value
+}
+```
+
+If any required variable is missing, the application will fail to start with a clear error message.
+
+## CORS Configuration
+
+The CORS middleware is configured in `main.go:46`. It allows:
+
+- **Origin**: Specified in `CORS_ORIGIN` (default: `http://localhost:3000`)
+- **Methods**: `GET, POST, PUT, DELETE, OPTIONS`
+- **Headers**: `Content-Type, Authorization`
+- **Credentials**: Enabled
+
+### Multiple CORS Origins
+
+To support multiple origins, you'll need to modify the CORS middleware in `main.go:44`. Example:
+
+```go
+allowedOrigins := []string{
+    "http://localhost:3000",
+    "https://app.yourcompany.com",
+    "https://staging.yourcompany.com",
+}
+
+origin := r.Header.Get("Origin")
+for _, allowed := range allowedOrigins {
+    if origin == allowed {
+        w.Header().Set("Access-Control-Allow-Origin", origin)
+        break
+    }
+}
+```
+
+## Testing Environment Variables
+
+For testing, you can create a separate `.env.test` file:
+
+```env .env.test
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=companyflow_test
+DB_PASSWORD=test_password
+DB_NAME=companyflow_test
+DB_SSLMODE=disable
+PORT=8081
+CORS_ORIGIN=http://localhost:3000
+JWT_SECRET=test_jwt_secret
+```
+
+Load it before running tests:
+
+```bash
+export $(cat .env.test | xargs) && go test ./...
+```
+
+## Production Deployment
+
+<Warning>
+  Never use `.env` files in production. Use your platform's environment variable configuration instead.
+</Warning>
+
+### Platform-Specific Configuration
+
+<CodeGroup>
+  ```bash Docker
+  # Use --env-file or -e flags
+  docker run -e DB_HOST=localhost \
+    -e DB_PORT=5432 \
+    -e DB_USER=companyflow \
+    -e DB_PASSWORD=password \
+    -e DB_NAME=companyflow \
+    -e DB_SSLMODE=require \
+    -e PORT=8080 \
+    -e CORS_ORIGIN=https://app.com \
+    -e JWT_SECRET=secret \
+    companyflow:latest
+  ```
+
+  ```bash Kubernetes
+  # Create a secret
+  kubectl create secret generic companyflow-secrets \
+    --from-literal=DB_PASSWORD=password \
+    --from-literal=JWT_SECRET=secret
+  
+  # Reference in deployment
+  env:
+    - name: DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: companyflow-secrets
+          key: DB_PASSWORD
+  ```
+
+  ```bash Heroku
+  # Set config vars
+  heroku config:set DB_HOST=your-db-host
+  heroku config:set DB_PORT=5432
+  heroku config:set DB_USER=your-user
+  heroku config:set DB_PASSWORD=your-password
+  heroku config:set DB_NAME=your-db
+  heroku config:set DB_SSLMODE=require
+  heroku config:set PORT=8080
+  heroku config:set CORS_ORIGIN=https://your-app.com
+  heroku config:set JWT_SECRET=your-secret
+  ```
+
+  ```bash AWS (ECS/Fargate)
+  # Define in task definition JSON
+  "environment": [
+    {"name": "DB_HOST", "value": "your-rds-endpoint"},
+    {"name": "DB_PORT", "value": "5432"},
+    {"name": "DB_NAME", "value": "companyflow"},
+    {"name": "DB_SSLMODE", "value": "require"},
+    {"name": "PORT", "value": "8080"}
+  ],
+  "secrets": [
+    {"name": "DB_PASSWORD", "valueFrom": "arn:aws:secretsmanager:..."},
+    {"name": "JWT_SECRET", "valueFrom": "arn:aws:secretsmanager:..."}
+  ]
+  ```
+</CodeGroup>
+
+## Troubleshooting
+
+### Missing Environment Variable Error
+
+If you see this error:
+
+```
+Missing required environment variable: DB_HOST
+```
+
+Ensure your `.env` file exists and contains all required variables.
+
+### .env File Not Loading
+
+If your `.env` file isn't being loaded:
+
+1. Verify the file is named exactly `.env` (not `.env.txt`)
+2. Ensure it's in the root directory where you run `go run main.go`
+3. Check file permissions: `chmod 644 .env`
+
+### CORS Errors
+
+If you see CORS errors in the browser:
+
+1. Verify `CORS_ORIGIN` matches your frontend URL exactly (including protocol)
+2. Ensure the frontend is making requests to the correct API URL
+3. Check that preflight OPTIONS requests are being handled
+
+## Next Steps
+
+After configuring environment variables:
+
+1. [Set up your database](/guides/database-setup)
+2. [Run database migrations](/guides/running-migrations)
+3. [Test your configuration](/guides/testing)

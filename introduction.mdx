@@ -1,0 +1,116 @@
+---
+title: Introduction
+description: Welcome to CompanyFlow - A comprehensive HRMS and ERP backend solution built with Go
+---
+
+CompanyFlow is a robust Human Resource Management System (HRMS) and Enterprise Resource Planning (ERP) backend designed to streamline organizational operations. Built with Go, it provides a powerful, scalable multi-tenant architecture to manage companies, employees, departments, roles, leave requests, memos, and approval workflows.
+
+## What is CompanyFlow?
+
+CompanyFlow offers a complete suite of tools for managing your organization's human resources and operational workflows. Whether you're managing a single company or multiple tenants, CompanyFlow provides the flexibility and security you need.
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get up and running with CompanyFlow in minutes
+  </Card>
+  <Card title="Installation" icon="download" href="/installation">
+    Set up your development environment and run the server
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/auth/login">
+    Explore all available endpoints and their parameters
+  </Card>
+  <Card title="Authentication" icon="shield" href="/concepts/authentication">
+    Learn how to secure your API requests with JWT
+  </Card>
+</CardGroup>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Multi-Tenant Architecture" icon="building">
+    Support for multiple companies (tenants) within a single instance, ensuring complete data isolation and security
+  </Card>
+  <Card title="Employee Management" icon="users">
+    Full CRUD operations for employee records, including bulk upload capabilities for efficient onboarding
+  </Card>
+  <Card title="Role-Based Access Control" icon="lock">
+    Flexible role and permission system to manage user access and maintain security across your organization
+  </Card>
+  <Card title="Organization Structure" icon="sitemap">
+    Manage departments, designations, and employee levels to reflect your organizational hierarchy
+  </Card>
+  <Card title="Leave Management" icon="calendar">
+    Comprehensive system for requesting, approving, and tracking employee leaves
+  </Card>
+  <Card title="Memo & Approvals" icon="file-check">
+    Internal communication via memos with integrated approval workflows
+  </Card>
+  <Card title="Audit Logging" icon="clipboard-list">
+    Track system activities for compliance, monitoring, and security audits
+  </Card>
+  <Card title="RESTful API" icon="plug">
+    Clean and documented API endpoints with interactive Swagger documentation
+  </Card>
+</CardGroup>
+
+## Technology Stack
+
+CompanyFlow is built with modern, production-ready technologies:
+
+- **Language**: Go 1.24.0
+- **Database**: PostgreSQL with pgx/v5 driver
+- **Router**: Gorilla Mux
+- **Authentication**: JWT (JSON Web Tokens) with golang-jwt/jwt/v5
+- **Documentation**: Swagger/OpenAPI with swaggo
+- **Configuration**: Environment-based with godotenv
+- **Password Security**: bcrypt hashing with golang.org/x/crypto
+
+<Note>
+  CompanyFlow automatically runs database migrations on startup, ensuring your schema is always up to date.
+</Note>
+
+## Core Capabilities
+
+### Multi-Tenant Support
+
+CompanyFlow is designed from the ground up to support multiple companies in a single deployment. Each tenant's data is completely isolated, providing security and compliance for organizations managing multiple entities.
+
+### Security First
+
+- JWT-based authentication for all protected routes
+- Bcrypt password hashing for employee credentials
+- Configurable CORS middleware for trusted origins
+- Role-based access control (RBAC) for granular permissions
+
+### Developer Experience
+
+- Interactive Swagger documentation at `/swagger/index.html`
+- Consistent RESTful API design
+- Comprehensive error responses
+- Built-in pagination for list endpoints
+- Health check endpoint for monitoring
+
+## Getting Started
+
+<Steps>
+  <Step title="Install Prerequisites">
+    Ensure you have Go 1.24+, PostgreSQL 14+, and Git installed on your system.
+  </Step>
+  <Step title="Set Up Environment">
+    Clone the repository and configure your environment variables.
+  </Step>
+  <Step title="Run the Server">
+    Start the CompanyFlow server and access the API documentation.
+  </Step>
+  <Step title="Make Your First Request">
+    Authenticate and start interacting with the API.
+  </Step>
+</Steps>
+
+Ready to get started? Head over to the [Quick Start guide](/quickstart) to make your first API call.
+
+## Support & Resources
+
+- **Repository**: [github.com/falasefemi2/companyflowlow](https://github.com/falasefemi2/companyflowlow)
+- **License**: MIT License
+- **API Documentation**: Available at `/swagger/index.html` when server is running
